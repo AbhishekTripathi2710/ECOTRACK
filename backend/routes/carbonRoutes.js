@@ -4,7 +4,8 @@ const authMiddleware = require('../middlewares/authMiddleware')
 
 const router = express.Router();
 
-router.post("/submit",authMiddleware,submitCarbonData);
-router.get("/history",authMiddleware,getUserHistory);
+router.post("/submit", authMiddleware.authUser, submitCarbonData);
+router.get("/history", authMiddleware.authUser, getUserHistory);
+
 
 module.exports = router;
