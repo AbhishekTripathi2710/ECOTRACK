@@ -1,90 +1,172 @@
-import { Link } from "react-router-dom";
+"use client"
+
+import { useState, useEffect, useContext } from "react"
+import { Link } from "react-router-dom"
+import { UserContext } from "../context/userContext"
+import axios from "../config/axios"
+import {
+    LineChart,
+    Line,
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    Legend,
+    ResponsiveContainer,
+    PieChart,
+    Pie,
+    Cell,
+} from "recharts"
 
 const Home = () => {
+    const { user } = useContext(UserContext)
+    const [dailyFootprint, setDailyFootprint] = useState(null)
+    const [monthlyFootprint, setMonthlyFootprint] = useState(null)
+    const [footprintHistory, setFootprintHistory] = useState([])
+    const [footprintBreakdown, setFootprintBreakdown] = useState([])
+
+    useEffect(() => {
+        if (user) {
+            fetchCarbonData()
+        }
+    }, [user])
+
+    const fetchCarbonData = async () => {
+        try {
+            const response = await axios.get("/api/carbon/user-data")
+            setDailyFootprint(response.data.dailyFootprint)
+            setMonthlyFootprint(response.data.monthlyFootprint)
+            setFootprintHistory(response.data.footprintHistory)
+            setFootprintBreakdown(response.data.footprintBreakdown)
+        } catch (error) {
+            console.error("Error fetching carbon data:", error)
+        }
+    }
+
+    const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"]
+
     return (
         <div className="bg-gray-900 text-white min-h-screen">
-            {/* Hero Section */}
-            <header className="text-center py-16 px-6">
-                <h1 className="text-4xl md:text-5xl font-bold text-green-400">Calculate Your Carbon Footprint</h1>
-                <p className="text-lg mt-4 text-gray-300">Take a step towards a greener future by tracking and reducing your carbon emissions.</p>
-                <Link to="/calculator">
-                    <button className="mt-6 bg-green-500 hover:bg-green-600 px-6 py-3 rounded-lg text-lg font-semibold">
-                        Get Started
-                    </button>
-                </Link>
+            <header className="bg-gray-800 py-6 px-4">
+                <div className="max-w-7xl mx-auto flex justify-between items-center">
+                    <h1 className="text-3xl font-bold text-green-400">Carbon Footprint Dashboard</h1>
+                    <Link
+                        to="/calculator"
+                        className="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-lg text-white font-semibold"
+                    >
+                        Calculate Now
+                    </Link>
+                </div>
             </header>
 
-            {/* Why It Matters Section */}
-            <section className="max-w-4xl mx-auto text-center py-12 px-6">
-                <h2 className="text-3xl font-semibold text-green-400">Why It Matters?</h2>
-                <p className="mt-4 text-gray-300">
-                    Every action we take impacts the environment. Reducing carbon emissions helps combat climate change,
-                    preserve resources, and create a sustainable future.
-                </p>
-                <div className="flex justify-center gap-6 mt-6">
-                    <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-64">
-                        <h3 className="text-xl font-semibold text-green-400">🌱 4.8 Metric Tons</h3>
-                        <p className="text-gray-300 text-sm">The average carbon footprint per person annually.</p>
+            <main className="max-w-7xl mx-auto py-8 px-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Daily Footprint Card */}
+                    <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
+                        <h2 className="text-2xl font-semibold text-green-400 mb-4">Today's Footprint</h2>
+                        <p className="text-4xl font-bold">
+                            {dailyFootprint ? `${dailyFootprint.toFixed(2)} kg CO₂` : "Loading..."}
+                        </p>
                     </div>
-                    <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-64">
-                        <h3 className="text-xl font-semibold text-green-400">🌎 40 Trees</h3>
-                        <p className="text-gray-300 text-sm">Reducing 1 ton of CO₂ is like planting 40 trees.</p>
+
+                    {/* Monthly Footprint Card */}
+                    <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
+                        <h2 className="text-2xl font-semibold text-green-400 mb-4">This Month's Footprint</h2>
+                        <p className="text-4xl font-bold">
+                            {monthlyFootprint ? `${monthlyFootprint.toFixed(2)} kg CO₂` : "Loading..."}
+                        </p>
                     </div>
                 </div>
-            </section>
 
-            {/* How It Works Section */}
-            <section className="max-w-4xl mx-auto py-12 px-6">
-                <h2 className="text-3xl font-semibold text-green-400 text-center">How It Works?</h2>
-                <div className="mt-6 space-y-6">
+                {/* Footprint History Chart */}
+                <div className="mt-8 bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <h2 className="text-2xl font-semibold text-green-400 mb-4">Your Carbon Footprint History</h2>
+                    <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={footprintHistory}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                            <XAxis dataKey="date" stroke="#888" />
+                            <YAxis stroke="#888" />
+                            <Tooltip contentStyle={{ backgroundColor: "#333", border: "none" }} />
+                            <Legend />
+                            <Line type="monotone" dataKey="footprint" stroke="#8884d8" activeDot={{ r: 8 }} />
+                        </LineChart>
+                    </ResponsiveContainer>
+                </div>
+
+                {/* Footprint Breakdown */}
+                <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
-                        <h3 className="text-xl font-semibold text-green-400">1️⃣ Enter Your Daily Activities</h3>
-                        <p className="text-gray-300">Provide details about your transport, energy usage, and food habits.</p>
+                        <h2 className="text-2xl font-semibold text-green-400 mb-4">Footprint Breakdown</h2>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <PieChart>
+                                <Pie
+                                    data={footprintBreakdown}
+                                    cx="50%"
+                                    cy="50%"
+                                    labelLine={false}
+                                    outerRadius={80}
+                                    fill="#8884d8"
+                                    dataKey="value"
+                                >
+                                    {(footprintBreakdown || []).map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip contentStyle={{ backgroundColor: "#333", border: "none" }} />
+                                <Legend />
+                            </PieChart>
+                        </ResponsiveContainer>
                     </div>
+
                     <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
-                        <h3 className="text-xl font-semibold text-green-400">2️⃣ Get Your Carbon Score</h3>
-                        <p className="text-gray-300">Our system calculates your footprint and provides insights.</p>
-                    </div>
-                    <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
-                        <h3 className="text-xl font-semibold text-green-400">3️⃣ Reduce & Track Impact</h3>
-                        <p className="text-gray-300">Learn eco-friendly tips and track your improvements.</p>
+                        <h2 className="text-2xl font-semibold text-green-400 mb-4">Category Comparison</h2>
+                        <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={footprintBreakdown || []}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                                <XAxis dataKey="name" stroke="#888" />
+                                <YAxis stroke="#888" />
+                                <Tooltip contentStyle={{ backgroundColor: "#333", border: "none" }} />
+                                <Legend />
+                                <Bar dataKey="value" fill="#82ca9d" />
+                            </BarChart>
+                        </ResponsiveContainer>
                     </div>
                 </div>
-            </section>
 
-            {/* Mini Calculator Preview (Placeholder) */}
-            <section className="max-w-4xl mx-auto text-center py-12 px-6">
-                <h2 className="text-3xl font-semibold text-green-400">Try Our Carbon Calculator</h2>
-                <p className="mt-4 text-gray-300">Enter a few details to get a quick carbon footprint estimate.</p>
-                <Link to="/calculator">
-                    <button className="mt-6 bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-lg text-lg font-semibold">
-                        Try Now
-                    </button>
-                </Link>
-            </section>
+                {/* Tips Section */}
+                <div className="mt-8 bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <h2 className="text-2xl font-semibold text-green-400 mb-4">Tips to Reduce Your Footprint</h2>
+                    <ul className="list-disc list-inside space-y-2">
+                        <li>Use public transportation or carpool when possible</li>
+                        <li>Switch to energy-efficient appliances</li>
+                        <li>Reduce meat consumption and opt for plant-based meals</li>
+                        <li>Recycle and compost to minimize waste</li>
+                        <li>Use renewable energy sources like solar panels</li>
+                    </ul>
+                </div>
+            </main>
 
-            {/* Leaderboard (Optional) */}
-            <section className="max-w-4xl mx-auto text-center py-12 px-6">
-                <h2 className="text-3xl font-semibold text-green-400">🌍 Community Impact</h2>
-                <p className="mt-4 text-gray-300">Join thousands of users who are reducing their carbon footprint!</p>
-                <Link to="/leaderboard">
-                    <button className="mt-6 bg-yellow-500 hover:bg-yellow-600 px-6 py-3 rounded-lg text-lg font-semibold">
-                        View Leaderboard
-                    </button>
-                </Link>
-            </section>
-
-            {/* Footer */}
             <footer className="bg-gray-800 py-6 text-center mt-12">
                 <p className="text-gray-400">© 2024 Carbon Footprint Calculator | All Rights Reserved</p>
                 <div className="mt-2">
-                    <a href="#" className="text-gray-400 hover:text-white mx-2">Twitter</a> |
-                    <a href="#" className="text-gray-400 hover:text-white mx-2">LinkedIn</a> |
-                    <a href="#" className="text-gray-400 hover:text-white mx-2">GitHub</a>
+                    <a href="#" className="text-gray-400 hover:text-white mx-2">
+                        Twitter
+                    </a>{" "}
+                    |
+                    <a href="#" className="text-gray-400 hover:text-white mx-2">
+                        LinkedIn
+                    </a>{" "}
+                    |
+                    <a href="#" className="text-gray-400 hover:text-white mx-2">
+                        GitHub
+                    </a>
                 </div>
             </footer>
         </div>
-    );
-};
+    )
+}
 
-export default Home;
+export default Home
+

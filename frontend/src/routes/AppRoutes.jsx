@@ -4,6 +4,7 @@ import UserAuth from "../auth/UserAuth";
 import Home from "../pages/hOME.JSX";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
+import CarbonCalculator from "../pages/CarbonCalculator";
 
 
 
@@ -14,7 +15,8 @@ const AppRoutes = () => {
             <Route path="/"  element={<UserAuth><Home></Home></UserAuth>}></Route>
             <Route path="/login" element={<Login></Login>}></Route>
             <Route path="/register" element={<Register></Register>}></Route>
-            </Routes>
+            <Route path="/calculator" element={<UserAuth><CarbonCalculator></CarbonCalculator></UserAuth>}></Route>
+        </Routes>
         </BrowserRouter>
     )
 }
