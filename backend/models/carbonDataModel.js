@@ -16,11 +16,6 @@ const carbonDataSchema = new mongoose.Schema({
         renewableUsage: { type: Boolean, default: false }
     },
     diet: { type: String, enum: ["vegan", "vegetarian", "non-vegetarian"], required: true },
-    shopping: {
-        clothing: { type: Number, default: 0 }, // ₹ spent on clothing
-        electronics: { type: Number, default: 0 }, // ₹ spent on electronics
-        recycling: { type: Boolean, default: false }
-    },
     totalFootprint: { type: Number, default: 0 },
     date: { type: Date, default: Date.now }
 });

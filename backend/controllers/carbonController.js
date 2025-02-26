@@ -31,13 +31,6 @@ const calculateCarbonFootprint = (data) => {
     const dietFactors = { vegan: 100, vegetarian: 150, "non-vegetarian": 270 };
     footprint += dietFactors[data.diet] || 0;
 
-    // ✅ Shopping & Recycling Contribution
-    footprint += ((data.shopping?.clothing || 0) / 5000) * 50; // 50 kg CO₂ per ₹5000 spent on clothing
-    footprint += ((data.shopping?.electronics || 0) / 10000) * 100; // 100 kg CO₂ per ₹10000 spent on electronics
-
-    if (data.shopping?.recycling) {
-        footprint *= 0.9; // Recycling reduces footprint by 10%
-    }
 
     return footprint.toFixed(2);
 };
@@ -119,11 +112,6 @@ exports.getLatestCarbonData = async(req,res)=>{
                 renewableUsage: latestEntry.energy.renewableUsage
             },
             diet: latestEntry.diet,
-            shopping: {
-                clothing: latestEntry.shopping.clothing,
-                electronics: latestEntry.shopping.electronics,
-                recycling: latestEntry.shopping.recycling
-            },
             totalFootprint: latestEntry.totalFootprint,
             date: latestEntry.date
         };
