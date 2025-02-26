@@ -18,7 +18,7 @@ const CarbonCalculator = () => {
         gasType: ""
     });
 
-    const [carbonFootprint, setCarbonFootprint] = useState(null);
+    const [carbonFootprint, setCarbonFootprint] = useState(0.0);
     const [error, setError] = useState(null);
 
     useEffect(() => {
@@ -55,9 +55,10 @@ const CarbonCalculator = () => {
             const response = await axios.post("/api/carbon/submit", requestData);
     
             console.log("API Response:", response.data);  // Debugging
+            console.log(response.data.dailyFootprint)
     
-            if (response.data.footprint !== undefined) {
-                setCarbonFootprint(parseFloat(response.data.footprint));  // ✅ Correct field
+            if (response.data.dailyFootprint !== undefined) {
+                setCarbonFootprint(response.data.dailyFootprint);  // ✅ Correct field
             } else {
                 setError("Unexpected response format");
             }
@@ -180,7 +181,7 @@ const CarbonCalculator = () => {
                 {carbonFootprint !== null && (
                     <div className="mt-6 p-4 bg-gray-700 rounded text-white">
                         <h3 className="text-lg font-semibold">Your Daily Carbon Footprint:</h3>
-                        <p className="text-xl font-bold">{carbonFootprint.toFixed(2)} kg CO₂</p>
+                        <p className="text-xl font-bold">{carbonFootprint} kg CO₂</p>
                     </div>
                 )}
 

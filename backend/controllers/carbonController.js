@@ -1,24 +1,25 @@
 const CarbonData = require("../models/carbonDataModel");
 
+// ✅ Function to calculate carbon footprint based on user input
 const calculateCarbonFootprint = (data) => {
     let footprint = 0;
 
-    // ✅ Fix: Use optional chaining to prevent crashes if a field is missing
-    footprint += (data.transportation?.car || 0) * 2.3; // Car petrol
-    footprint += (data.transportation?.bike || 0) * 2.3; // Bike petrol
-    footprint += (data.transportation?.publicTransport || 0) * 0.1; // Bus/Metro
-    footprint += (data.transportation?.flights || 0) * 250; // Flights
+    // ✅ Transportation footprint
+    footprint += (data.transportation?.car || 0) * 2.3;
+    footprint += (data.transportation?.bike || 0) * 2.3;
+    footprint += (data.transportation?.publicTransport || 0) * 0.1;
+    footprint += (data.transportation?.flights || 0) * 250;
 
-    // ✅ Electricity Bill Conversion to CO₂
-    const electricityKwh = (data.energy?.electricityBill || 0) / 8; // ₹8 per kWh
+    // ✅ Electricity Bill Conversion
+    const electricityKwh = (data.energy?.electricityBill || 0) / 8;
     footprint += electricityKwh * 0.82;
 
     // ✅ Gas Usage Calculation
     if (data.energy?.gasType === "PNG") {
-        const gasCubicMeters = (data.energy.gasBill || 0) / 50; // ₹50 per cubic meter
+        const gasCubicMeters = (data.energy.gasBill || 0) / 50;
         footprint += gasCubicMeters * 1.92;
     } else if (data.energy?.gasType === "LPG") {
-        const lpgKg = (data.energy.lpgCylinders || 0) * 14.2; // 1 cylinder = 14.2 kg
+        const lpgKg = (data.energy.lpgCylinders || 0) * 14.2;
         footprint += lpgKg * 2.98;
     }
 
@@ -34,36 +35,52 @@ const calculateCarbonFootprint = (data) => {
     return footprint.toFixed(2);
 };
 
+// ✅ Function to submit daily carbon data and update monthly total
 exports.submitCarbonData = async (req, res) => {
     try {
         if (!req.user) {
             return res.status(401).json({ message: "Unauthorized" });
         }
 
-        // ✅ Validate user input
-        if (!req.body || Object.keys(req.body).length === 0) {
-            return res.status(400).json({ message: "Invalid request data" });
+        const userId = req.user._id;
+        const footprint = parseFloat(calculateCarbonFootprint(req.body));
+        const today = new Date();
+        const currentMonth = today.getMonth();
+        const currentYear = today.getFullYear();
+
+        // ✅ Get the latest entry for this month
+        const latestEntry = await CarbonData.findOne({
+            userId,
+            date: {
+                $gte: new Date(currentYear, currentMonth, 1),
+                $lt: new Date(currentYear, currentMonth + 1, 1),
+            },
+        }).sort({ date: -1 });
+
+        let monthlyFootprint = footprint;
+        if (latestEntry) {
+            monthlyFootprint += latestEntry.monthlyFootprint;
         }
 
-        const userId = req.user._id;
-        const footprint = calculateCarbonFootprint(req.body);
-
+        // ✅ Save the new entry
         const carbonEntry = new CarbonData({
             userId,
             ...req.body,
             totalFootprint: footprint,
-            date: new Date(), // ✅ Add timestamp for sorting
+            monthlyFootprint,
+            date: today,
         });
 
         await carbonEntry.save();
 
-        res.status(201).json({ message: "Data submitted successfully", footprint });
+        res.status(201).json({ message: "Data submitted successfully", dailyFootprint: footprint, monthlyFootprint });
     } catch (error) {
-        console.error("🚨 Error in submitCarbonData:", error); // Log full error
+        console.error("🚨 Error in submitCarbonData:", error);
         res.status(500).json({ error: error.message });
     }
 };
 
+// ✅ Get the user's carbon footprint history
 exports.getUserHistory = async (req, res) => {
     try {
         if (!req.user) {
@@ -71,14 +88,16 @@ exports.getUserHistory = async (req, res) => {
         }
 
         const userId = req.user._id;
-        const history = await CarbonData.find({ userId }).sort({ date: -1 }); // ✅ Fix sorting
+        const history = await CarbonData.find({ userId }).sort({ date: -1 });
 
         res.status(200).json({ history });
     } catch (error) {
+        console.error("🚨 Error in getUserHistory:", error);
         res.status(500).json({ error: error.message });
     }
 };
 
+// ✅ Get the latest carbon footprint data for the user
 exports.getLatestCarbonData = async (req, res) => {
     try {
         if (!req.user) {
@@ -86,37 +105,47 @@ exports.getLatestCarbonData = async (req, res) => {
         }
 
         const userId = req.user._id;
-
-        // Fetch the latest carbon footprint entry
         const latestEntry = await CarbonData.findOne({ userId }).sort({ date: -1 });
 
         if (!latestEntry) {
             return res.status(404).json({ message: "No carbon data found for this user" });
         }
 
-        // ✅ Ensure optional chaining to prevent crashes if fields are missing
-        const formattedData = {
-            transportation: {
-                car: latestEntry.transportation?.car || 0,
-                bike: latestEntry.transportation?.bike || 0,
-                publicTransport: latestEntry.transportation?.publicTransport || 0,
-                flights: latestEntry.transportation?.flights || 0
-            },
-            energy: {
-                electricityBill: latestEntry.energy?.electricityBill || 0,
-                gasBill: latestEntry.energy?.gasBill || 0,
-                lpgCylinders: latestEntry.energy?.lpgCylinders || 0,
-                gasType: latestEntry.energy?.gasType || "N/A",
-                renewableUsage: latestEntry.energy?.renewableUsage || false
-            },
-            diet: latestEntry.diet || "N/A",
-            totalFootprint: latestEntry.totalFootprint || 0,
-            date: latestEntry.date || new Date()
-        };
-
-        res.status(200).json(formattedData);
+        res.status(200).json(latestEntry);
     } catch (error) {
         console.error("🚨 Error in getLatestCarbonData:", error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// ✅ Get Monthly Carbon Footprint
+exports.getMonthlyCarbonData = async (req, res) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        const userId = req.user._id;
+        const today = new Date();
+        const currentMonth = today.getMonth();
+        const currentYear = today.getFullYear();
+
+        // ✅ Fetch the latest entry from this month
+        const latestEntry = await CarbonData.findOne({
+            userId,
+            date: {
+                $gte: new Date(currentYear, currentMonth, 1),
+                $lt: new Date(currentYear, currentMonth + 1, 1),
+            },
+        }).sort({ date: -1 });
+
+        if (!latestEntry) {
+            return res.status(200).json({ monthlyFootprint: 0, message: "No data available for this month" });
+        }
+
+        res.status(200).json({ monthlyFootprint: latestEntry.monthlyFootprint });
+    } catch (error) {
+        console.error("🚨 Error in getMonthlyCarbonData:", error);
         res.status(500).json({ error: error.message });
     }
 };

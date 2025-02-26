@@ -33,32 +33,45 @@ const Home = () => {
 
     const fetchCarbonData = async () => {
         try {
-            const response = await axios.get("/api/carbon/user-data");
-            const data = response.data;
+            // Fetch latest daily footprint
+            const dailyResponse = await axios.get("/api/carbon/user-data");
+            const dailyData = dailyResponse.data;
+            setDailyFootprint(dailyData.totalFootprint || 0);
 
-            // Assume daily footprint is the latest entry's totalFootprint
-            setDailyFootprint(data.totalFootprint || 0);
+            // Fetch monthly footprint from backend
+            const monthlyResponse = await axios.get("/api/carbon/monthly");
+            setMonthlyFootprint(monthlyResponse.data.monthlyFootprint || 0);
 
-            // Mock Monthly footprint (should be calculated in backend)
-            setMonthlyFootprint((data.totalFootprint || 0) * 30);
+            // Fetch footprint history from backend
+            const historyResponse = await axios.get("/api/carbon/history");
 
-            // Create footprint history using `date`
-            setFootprintHistory([{ date: new Date(data.date).toLocaleDateString(), footprint: data.totalFootprint }]);
+            // Ensure historyResponse.data is an array before using map()
+            const historyData = Array.isArray(historyResponse.data.history) ? historyResponse.data.history : [];
 
-            // Construct footprint breakdown
+            setFootprintHistory(
+                historyData.map(entry => ({
+                    date: entry.date?.$date ? new Date(entry.date.$date).toLocaleDateString() : "Unknown",
+                    footprint: entry.totalFootprint || 0,
+                }))
+            );
+
+
+            // Construct footprint breakdown safely
             const breakdown = [
-                { name: "Public Transport", value: data.transportation.publicTransport },
-                { name: "Car", value: data.transportation.car },
-                { name: "Bike", value: data.transportation.bike },
-                { name: "Flights", value: data.transportation.flights },
-                { name: "Electricity", value: data.energy.electricityBill },
-                { name: "Gas", value: data.energy.gasBill }
+                { name: "Public Transport", value: dailyData.transportation?.publicTransport || 0 },
+                { name: "Car", value: dailyData.transportation?.car || 0 },
+                { name: "Bike", value: dailyData.transportation?.bike || 0 },
+                { name: "Flights", value: dailyData.transportation?.flights || 0 },
+                { name: "Electricity", value: dailyData.energy?.electricityBill || 0 },
+                { name: "Gas", value: dailyData.energy?.gasBill || 0 }
             ];
             setFootprintBreakdown(breakdown);
         } catch (error) {
             console.error("Error fetching carbon data:", error);
         }
     };
+
+
 
 
     const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"]
@@ -97,7 +110,7 @@ const Home = () => {
                 </div>
 
                 {/* Footprint History Chart */}
-                <div className="mt-8 bg-gray-800 p-6 rounded-lg shadow-lg">
+                <div className="mt-8 bg-gray-800 p-6 rounded-lg shadow-lg chart-container">
                     <h2 className="text-2xl font-semibold text-green-400 mb-4">Your Carbon Footprint History</h2>
                     <ResponsiveContainer width="100%" height={300}>
                         <LineChart data={footprintHistory}>

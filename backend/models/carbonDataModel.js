@@ -17,9 +17,11 @@ const carbonDataSchema = new mongoose.Schema({
     },
     diet: { type: String, enum: ["vegan", "vegetarian", "non-vegetarian"], required: true },
     totalFootprint: { type: Number, default: 0 },
-    date: { type: Date, default: Date.now }
-});
+    date: { type: Date, default: Date.now },
 
+    // New field for monthly footprint
+    monthlyFootprint: { type: Number, default: 0 }
+});
 
 const CarbonData = mongoose.model("carbonData", carbonDataSchema);
 module.exports = CarbonData;
