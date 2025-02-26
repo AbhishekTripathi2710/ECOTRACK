@@ -11,6 +11,8 @@ const CarbonCalculator = () => {
         electricityBill: "",
         gasBill: "",
         transportation: "",
+        vehicleType:"",
+        distance:"",
         foodConsumption: "",
         diet: "",
         gasType: ""
@@ -43,7 +45,9 @@ const CarbonCalculator = () => {
                     gasBill: formData.gasBill / 30,  // Convert monthly to daily
                     gasType: formData.gasType,
                 },
-                transportation: formData.transportation,  // Assuming it's daily
+                transportation: {
+                    [formData.vehicleType]: formData.distance,
+                },  // Assuming it's daily
                 foodConsumption: formData.foodConsumption,  // Assuming it's daily
                 diet: formData.diet,
             };
@@ -94,11 +98,28 @@ const CarbonCalculator = () => {
                     </div>
 
                     <div>
-                        <label className="block text-gray-400 mb-1">Daily Transportation (km)</label>
+                        <label className="block text-gray-400 mb-1">Vehicle Type</label>
+                        <select
+                            name="vehicleType"
+                            value={formData.vehicleType}
+                            onChange={handleChange}
+                            className="w-full p-2 rounded bg-gray-700 text-white focus:ring-2 focus:ring-blue-500"
+                            required
+                        >
+                            <option value="">Select Vehicle</option>
+                            <option value="car">Car</option>
+                            <option value="bike">Bike</option>
+                            <option value="publicTransport">Public Transport</option>
+                            <option value="flights">Flights</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-gray-400 mb-1">Daily Distance Travelled (km)</label>
                         <input
                             type="number"
-                            name="transportation"
-                            value={formData.transportation}
+                            name="distance"
+                            value={formData.distance}
                             onChange={handleChange}
                             className="w-full p-2 rounded bg-gray-700 text-white focus:ring-2 focus:ring-blue-500"
                             required

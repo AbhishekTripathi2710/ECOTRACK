@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect, useContext } from "react"
 import { Link } from "react-router-dom"
 import { UserContext } from "../context/userContext"
@@ -35,15 +33,33 @@ const Home = () => {
 
     const fetchCarbonData = async () => {
         try {
-            const response = await axios.get("/api/carbon/user-data")
-            setDailyFootprint(response.data.dailyFootprint)
-            setMonthlyFootprint(response.data.monthlyFootprint)
-            setFootprintHistory(response.data.footprintHistory)
-            setFootprintBreakdown(response.data.footprintBreakdown)
+            const response = await axios.get("/api/carbon/user-data");
+            const data = response.data;
+
+            // Assume daily footprint is the latest entry's totalFootprint
+            setDailyFootprint(data.totalFootprint || 0);
+
+            // Mock Monthly footprint (should be calculated in backend)
+            setMonthlyFootprint((data.totalFootprint || 0) * 30);
+
+            // Create footprint history using `date`
+            setFootprintHistory([{ date: new Date(data.date).toLocaleDateString(), footprint: data.totalFootprint }]);
+
+            // Construct footprint breakdown
+            const breakdown = [
+                { name: "Public Transport", value: data.transportation.publicTransport },
+                { name: "Car", value: data.transportation.car },
+                { name: "Bike", value: data.transportation.bike },
+                { name: "Flights", value: data.transportation.flights },
+                { name: "Electricity", value: data.energy.electricityBill },
+                { name: "Gas", value: data.energy.gasBill }
+            ];
+            setFootprintBreakdown(breakdown);
         } catch (error) {
-            console.error("Error fetching carbon data:", error)
+            console.error("Error fetching carbon data:", error);
         }
-    }
+    };
+
 
     const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"]
 
@@ -123,7 +139,7 @@ const Home = () => {
                     <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
                         <h2 className="text-2xl font-semibold text-green-400 mb-4">Category Comparison</h2>
                         <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={footprintBreakdown || []}>
+                            <BarChart data={footprintBreakdown}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#444" />
                                 <XAxis dataKey="name" stroke="#888" />
                                 <YAxis stroke="#888" />

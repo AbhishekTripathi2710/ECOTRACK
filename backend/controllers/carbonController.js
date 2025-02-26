@@ -3,7 +3,7 @@ const CarbonData = require("../models/carbonDataModel");
 const calculateCarbonFootprint = (data) => {
     let footprint = 0;
 
-    // ✅ Fix typo: "transportaion" → "transportation"
+    // ✅ Fix: Use optional chaining to prevent crashes if a field is missing
     footprint += (data.transportation?.car || 0) * 2.3; // Car petrol
     footprint += (data.transportation?.bike || 0) * 2.3; // Bike petrol
     footprint += (data.transportation?.publicTransport || 0) * 0.1; // Bus/Metro
@@ -30,7 +30,6 @@ const calculateCarbonFootprint = (data) => {
     // ✅ Diet Factor Calculation
     const dietFactors = { vegan: 100, vegetarian: 150, "non-vegetarian": 270 };
     footprint += dietFactors[data.diet] || 0;
-
 
     return footprint.toFixed(2);
 };
@@ -65,7 +64,6 @@ exports.submitCarbonData = async (req, res) => {
     }
 };
 
-
 exports.getUserHistory = async (req, res) => {
     try {
         if (!req.user) {
@@ -81,8 +79,8 @@ exports.getUserHistory = async (req, res) => {
     }
 };
 
-exports.getLatestCarbonData = async(req,res)=>{
-    try{
+exports.getLatestCarbonData = async (req, res) => {
+    try {
         if (!req.user) {
             return res.status(401).json({ message: "Unauthorized" });
         }
@@ -96,29 +94,29 @@ exports.getLatestCarbonData = async(req,res)=>{
             return res.status(404).json({ message: "No carbon data found for this user" });
         }
 
-        // Format the response as required
+        // ✅ Ensure optional chaining to prevent crashes if fields are missing
         const formattedData = {
             transportation: {
-                car: latestEntry.transportation.car,
-                bike: latestEntry.transportation.bike,
-                publicTransport: latestEntry.transportation.publicTransport,
-                flights: latestEntry.transportation.flights
+                car: latestEntry.transportation?.car || 0,
+                bike: latestEntry.transportation?.bike || 0,
+                publicTransport: latestEntry.transportation?.publicTransport || 0,
+                flights: latestEntry.transportation?.flights || 0
             },
             energy: {
-                electricityBill: latestEntry.energy.electricityBill,
-                gasBill: latestEntry.energy.gasBill,
-                lpgCylinders: latestEntry.energy.lpgCylinders,
-                gasType: latestEntry.energy.gasType,
-                renewableUsage: latestEntry.energy.renewableUsage
+                electricityBill: latestEntry.energy?.electricityBill || 0,
+                gasBill: latestEntry.energy?.gasBill || 0,
+                lpgCylinders: latestEntry.energy?.lpgCylinders || 0,
+                gasType: latestEntry.energy?.gasType || "N/A",
+                renewableUsage: latestEntry.energy?.renewableUsage || false
             },
-            diet: latestEntry.diet,
-            totalFootprint: latestEntry.totalFootprint,
-            date: latestEntry.date
+            diet: latestEntry.diet || "N/A",
+            totalFootprint: latestEntry.totalFootprint || 0,
+            date: latestEntry.date || new Date()
         };
 
         res.status(200).json(formattedData);
-    }catch(error){
+    } catch (error) {
         console.error("🚨 Error in getLatestCarbonData:", error);
         res.status(500).json({ error: error.message });
     }
-}
+};
