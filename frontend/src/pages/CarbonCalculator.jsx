@@ -1,7 +1,10 @@
 import React, { useContext, useEffect, useState } from "react";
+import StepWizard from "react-step-wizard";
 import { UserContext } from "../context/userContext";
 import { useNavigate } from "react-router-dom";
 import axios from "../config/axios";
+import Navbar from "../components/navbar";
+import Footer from "../components/Footer";
 
 const CarbonCalculator = () => {
     const { user } = useContext(UserContext);
@@ -11,8 +14,8 @@ const CarbonCalculator = () => {
         electricityBill: "",
         gasBill: "",
         transportation: "",
-        vehicleType:"",
-        distance:"",
+        vehicleType: "",
+        distance: "",
         foodConsumption: "",
         diet: "",
         gasType: ""
@@ -27,38 +30,31 @@ const CarbonCalculator = () => {
         }
     }, [user, navigate]);
 
-    const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value,
-        });
+    const updateFormData = (name, value) => {
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleSubmit = async () => {
         setError(null);
-    
+
         try {
             const requestData = {
                 energy: {
-                    electricityBill: formData.electricityBill / 30,  // Convert monthly to daily
-                    gasBill: formData.gasBill / 30,  // Convert monthly to daily
-                    gasType: formData.gasType,
+                    electricityBill: formData.electricityBill / 30, // Convert monthly to daily
+                    gasBill: formData.gasBill / 30, // Convert monthly to daily
+                    gasType: formData.gasType
                 },
                 transportation: {
-                    [formData.vehicleType]: formData.distance,
-                },  // Assuming it's daily
-                foodConsumption: formData.foodConsumption,  // Assuming it's daily
-                diet: formData.diet,
+                    [formData.vehicleType]: formData.distance
+                },
+                foodConsumption: formData.foodConsumption,
+                diet: formData.diet
             };
-    
+
             const response = await axios.post("/api/carbon/submit", requestData);
-    
-            console.log("API Response:", response.data);  // Debugging
-            console.log(response.data.dailyFootprint)
-    
+
             if (response.data.dailyFootprint !== undefined) {
-                setCarbonFootprint(response.data.dailyFootprint);  // ✅ Correct field
+                setCarbonFootprint(response.data.dailyFootprint);
             } else {
                 setError("Unexpected response format");
             }
@@ -66,131 +62,106 @@ const CarbonCalculator = () => {
             setError("Failed to calculate. Please try again.");
         }
     };
-    
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-900 p-6">
-            <div className="bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-lg">
-                <h2 className="text-2xl font-bold text-white mb-6">Daily Carbon Footprint Calculator</h2>
+        <div className="min-h-screen bg-gray-900 p-6">
+            <Navbar />
+            <div className="bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-lg mx-auto mt-10">
+                <h2 className="text-2xl font-bold text-white mb-6">Daily Carbon Footprint Quiz</h2>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-gray-400 mb-1">Monthly Electricity Bill (INR)</label>
-                        <input
-                            type="number"
-                            name="electricityBill"
-                            value={formData.electricityBill}
-                            onChange={handleChange}
-                            className="w-full p-2 rounded bg-gray-700 text-white focus:ring-2 focus:ring-blue-500"
-                            required
-                        />
-                    </div>
+                <StepWizard>
+                    <Step1 updateFormData={updateFormData} />
+                    <Step2 updateFormData={updateFormData} />
+                    <Step3 updateFormData={updateFormData} />
+                    <Step4 updateFormData={updateFormData} handleSubmit={handleSubmit} />
+                </StepWizard>
 
-                    <div>
-                        <label className="block text-gray-400 mb-1">Monthly Gas Bill (INR)</label>
-                        <input
-                            type="number"
-                            name="gasBill"
-                            value={formData.gasBill}
-                            onChange={handleChange}
-                            className="w-full p-2 rounded bg-gray-700 text-white focus:ring-2 focus:ring-blue-500"
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-gray-400 mb-1">Vehicle Type</label>
-                        <select
-                            name="vehicleType"
-                            value={formData.vehicleType}
-                            onChange={handleChange}
-                            className="w-full p-2 rounded bg-gray-700 text-white focus:ring-2 focus:ring-blue-500"
-                            required
-                        >
-                            <option value="">Select Vehicle</option>
-                            <option value="car">Car</option>
-                            <option value="bike">Bike</option>
-                            <option value="publicTransport">Public Transport</option>
-                            <option value="flights">Flights</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="block text-gray-400 mb-1">Daily Distance Travelled (km)</label>
-                        <input
-                            type="number"
-                            name="distance"
-                            value={formData.distance}
-                            onChange={handleChange}
-                            className="w-full p-2 rounded bg-gray-700 text-white focus:ring-2 focus:ring-blue-500"
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-gray-400 mb-1">Daily Food Consumption (kg)</label>
-                        <input
-                            type="number"
-                            name="foodConsumption"
-                            value={formData.foodConsumption}
-                            onChange={handleChange}
-                            className="w-full p-2 rounded bg-gray-700 text-white focus:ring-2 focus:ring-blue-500"
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-gray-400 mb-1">Diet Type</label>
-                        <select
-                            name="diet"
-                            value={formData.diet}
-                            onChange={handleChange}
-                            className="w-full p-2 rounded bg-gray-700 text-white focus:ring-2 focus:ring-blue-500"
-                            required
-                        >
-                            <option value="">Select Diet</option>
-                            <option value="vegan">Vegan</option>
-                            <option value="vegetarian">Vegetarian</option>
-                            <option value="non-vegetarian">Non-Vegetarian</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="block text-gray-400 mb-1">Gas Type</label>
-                        <select
-                            name="gasType"
-                            value={formData.gasType}
-                            onChange={handleChange}
-                            className="w-full p-2 rounded bg-gray-700 text-white focus:ring-2 focus:ring-blue-500"
-                            required
-                        >
-                            <option value="">Select Gas Type</option>
-                            <option value="PNG">Piped Natural Gas (PNG)</option>
-                            <option value="LPG">Liquefied Petroleum Gas (LPG)</option>
-                        </select>
-                    </div>
-
-                    <button
-                        type="submit"
-                        className="w-full p-3 rounded bg-blue-500 text-white hover:bg-blue-600 focus:ring-2 focus:ring-blue-500"
-                    >
-                        Calculate
-                    </button>
-                </form>
-
-                {carbonFootprint !== null && (
+                {carbonFootprint > 0 && (
                     <div className="mt-6 p-4 bg-gray-700 rounded text-white">
                         <h3 className="text-lg font-semibold">Your Daily Carbon Footprint:</h3>
                         <p className="text-xl font-bold">{carbonFootprint} kg CO₂</p>
                     </div>
                 )}
 
-                {error && (
-                    <p className="text-red-500 mt-4">{error}</p>
-                )}
+                {error && <p className="text-red-500 mt-4">{error}</p>}
             </div>
+            <Footer />
         </div>
     );
 };
+
+// Individual Steps
+const Step1 = ({ updateFormData, nextStep }) => (
+    <div className="text-white">
+        <h3 className="text-lg font-bold mb-4">Energy Usage</h3>
+        <label className="block mb-2">Monthly Electricity Bill (INR)</label>
+        <input type="number" onChange={(e) => updateFormData("electricityBill", e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" required />
+        
+        <label className="block mt-4 mb-2">Monthly Gas Bill (INR)</label>
+        <input type="number" onChange={(e) => updateFormData("gasBill", e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" required />
+
+        <button onClick={nextStep} className="mt-4 p-2 bg-blue-500 text-white rounded">Next</button>
+    </div>
+);
+
+const Step2 = ({ updateFormData, nextStep, previousStep }) => (
+    <div className="text-white">
+        <h3 className="text-lg font-bold mb-4">Transportation</h3>
+        <label className="block mb-2">Vehicle Type</label>
+        <select onChange={(e) => updateFormData("vehicleType", e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white">
+            <option value="">Select Vehicle</option>
+            <option value="car">Car</option>
+            <option value="bike">Bike</option>
+            <option value="publicTransport">Public Transport</option>
+            <option value="flights">Flights</option>
+        </select>
+
+        <label className="block mt-4 mb-2">Daily Distance Travelled (km)</label>
+        <input type="number" onChange={(e) => updateFormData("distance", e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" required />
+
+        <div className="flex justify-between mt-4">
+            <button onClick={previousStep} className="p-2 bg-gray-500 text-white rounded">Back</button>
+            <button onClick={nextStep} className="p-2 bg-blue-500 text-white rounded">Next</button>
+        </div>
+    </div>
+);
+
+const Step3 = ({ updateFormData, nextStep, previousStep }) => (
+    <div className="text-white">
+        <h3 className="text-lg font-bold mb-4">Food Consumption</h3>
+        <label className="block mb-2">Daily Food Consumption (kg)</label>
+        <input type="number" onChange={(e) => updateFormData("foodConsumption", e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" required />
+
+        <label className="block mt-4 mb-2">Diet Type</label>
+        <select onChange={(e) => updateFormData("diet", e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white">
+            <option value="">Select Diet</option>
+            <option value="vegan">Vegan</option>
+            <option value="vegetarian">Vegetarian</option>
+            <option value="non-vegetarian">Non-Vegetarian</option>
+        </select>
+
+        <div className="flex justify-between mt-4">
+            <button onClick={previousStep} className="p-2 bg-gray-500 text-white rounded">Back</button>
+            <button onClick={nextStep} className="p-2 bg-blue-500 text-white rounded">Next</button>
+        </div>
+    </div>
+);
+
+const Step4 = ({ updateFormData, handleSubmit, previousStep }) => (
+    <div className="text-white">
+        <h3 className="text-lg font-bold mb-4">Gas Usage</h3>
+        <label className="block mb-2">Gas Type</label>
+        <select onChange={(e) => updateFormData("gasType", e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white">
+            <option value="">Select Gas Type</option>
+            <option value="PNG">Piped Natural Gas (PNG)</option>
+            <option value="LPG">Liquefied Petroleum Gas (LPG)</option>
+        </select>
+
+        <div className="flex justify-between mt-4">
+            <button onClick={previousStep} className="p-2 bg-gray-500 text-white rounded">Back</button>
+            <button onClick={handleSubmit} className="p-2 bg-green-500 text-white rounded">Calculate</button>
+        </div>
+    </div>
+);
 
 export default CarbonCalculator;

@@ -17,6 +17,8 @@ import {
     Pie,
     Cell,
 } from "recharts"
+import Navbar from "../components/navbar"
+import Footer from "../components/Footer"
 
 const Home = () => {
     const { user } = useContext(UserContext)
@@ -74,21 +76,11 @@ const Home = () => {
 
 
 
-    const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"]
+    const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042",]
 
     return (
         <div className="bg-gray-900 text-white min-h-screen">
-            <header className="bg-gray-800 py-6 px-4">
-                <div className="max-w-7xl mx-auto flex justify-between items-center">
-                    <h1 className="text-3xl font-bold text-green-400">Carbon Footprint Dashboard</h1>
-                    <Link
-                        to="/calculator"
-                        className="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-lg text-white font-semibold"
-                    >
-                        Calculate Now
-                    </Link>
-                </div>
-            </header>
+            <Navbar></Navbar>
 
             <main className="max-w-7xl mx-auto py-8 px-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -177,22 +169,7 @@ const Home = () => {
                 </div>
             </main>
 
-            <footer className="bg-gray-800 py-6 text-center mt-12">
-                <p className="text-gray-400">© 2024 Carbon Footprint Calculator | All Rights Reserved</p>
-                <div className="mt-2">
-                    <a href="#" className="text-gray-400 hover:text-white mx-2">
-                        Twitter
-                    </a>{" "}
-                    |
-                    <a href="#" className="text-gray-400 hover:text-white mx-2">
-                        LinkedIn
-                    </a>{" "}
-                    |
-                    <a href="#" className="text-gray-400 hover:text-white mx-2">
-                        GitHub
-                    </a>
-                </div>
-            </footer>
+            <Footer></Footer>
         </div>
     )
 }
