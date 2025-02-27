@@ -83,7 +83,12 @@ const Home = () => {
     return (
         <div className="bg-gray-900 text-white min-h-screen">
             <Navbar></Navbar>
-
+            {dailyFootprint > 30 && (
+                    <div className="bg-red-600 text-white p-4 mb-4 rounded-lg shadow-md">
+                        <h3 className="text-lg font-semibold">⚠ High Carbon Footprint Alert!</h3>
+                        <p>Your daily footprint is <strong>{dailyFootprint.toFixed(2)} kg CO₂</strong>. Consider reducing your emissions.</p>
+                    </div>
+                )}
             <main className="max-w-7xl mx-auto py-8 px-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* Daily Footprint Card */}

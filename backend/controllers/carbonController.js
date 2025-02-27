@@ -4,36 +4,47 @@ const CarbonData = require("../models/carbonDataModel");
 const calculateCarbonFootprint = (data) => {
     let footprint = 0;
 
-    // ✅ Transportation footprint
-    footprint += (data.transportation?.car || 0) * 2.3;
-    footprint += (data.transportation?.bike || 0) * 2.3;
-    footprint += (data.transportation?.publicTransport || 0) * 0.1;
-    footprint += (data.transportation?.flights || 0) * 250;
+    // ✅ Transportation footprint (kg CO₂ per km)
+    footprint += (data.transportation?.car || 0) * 0.12;  // Car
+    footprint += (data.transportation?.bike || 0) * 0.08;  // Bike
+    footprint += (data.transportation?.publicTransport || 0) * 0.1;  // Bus/Train
+    footprint += (data.transportation?.flights || 0) * 0.24;  // Flights (per km)
 
-    // ✅ Electricity Bill Conversion
-    const electricityKwh = (data.energy?.electricityBill || 0) / 8;
-    footprint += electricityKwh * 0.82;
+    // ✅ Electricity Bill Conversion (₹ to kWh, then to CO₂)
+    const electricityKwh = (data.energy?.electricityBill || 0) / 8;  // Convert ₹ to kWh
+    footprint += electricityKwh * 0.8;  // 0.8 kg CO₂ per kWh
 
     // ✅ Gas Usage Calculation
     if (data.energy?.gasType === "PNG") {
-        const gasCubicMeters = (data.energy.gasBill || 0) / 50;
-        footprint += gasCubicMeters * 1.92;
+        const gasKg = (data.energy.gasBill || 0) / 40;  // ₹40 per kg (approx.)
+        footprint += gasKg * 2.0;  // PNG: 2.0 kg CO₂ per kg
     } else if (data.energy?.gasType === "LPG") {
-        const lpgKg = (data.energy.lpgCylinders || 0) * 14.2;
-        footprint += lpgKg * 2.98;
+        const lpgKg = (data.energy.lpgCylinders || 0) * 14.2;  // 1 cylinder = 14.2 kg
+        footprint += lpgKg * 2.98;  // LPG: 2.98 kg CO₂ per kg
+    }
+
+    // ✅ Food Consumption (Calories to kg CO₂)
+    if (data.food?.calories) {
+        let emissionFactor = 0;
+        if (data.food?.diet === "vegan") {
+            emissionFactor = 1.5 / 2000;  // Vegan: 1.5 kg CO₂ per 2000 kcal
+        } else if (data.food?.diet === "vegetarian") {
+            emissionFactor = 2.0 / 2000;  // Vegetarian: 2.0 kg CO₂ per 2000 kcal
+        } else if (data.food?.diet === "non-vegetarian") {
+            emissionFactor = 5.0 / 2000;  // Non-Veg: 5.0 kg CO₂ per 2000 kcal
+        }
+        footprint += data.food.calories * emissionFactor;
     }
 
     // ✅ Renewable Energy Discount
     if (data.energy?.renewableUsage) {
-        footprint *= 0.8;
+        footprint *= 0.8;  // 20% reduction if renewable energy is used
     }
-
-    // ✅ Diet Factor Calculation
-    const dietFactors = { vegan: 100, vegetarian: 150, "non-vegetarian": 270 };
-    footprint += dietFactors[data.diet] || 0;
 
     return footprint.toFixed(2);
 };
+
+
 
 // ✅ Function to submit daily carbon data and update monthly total
 exports.submitCarbonData = async (req, res) => {

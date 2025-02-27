@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -20,6 +20,12 @@ const Navbar = () => {
     }
   }, [darkMode]);
 
+  // ✅ Logout Function
+  const handleLogout = () => {
+    localStorage.removeItem("authToken"); // Remove token
+    navigate("/login"); // Redirect to login page
+  };
+
   return (
     <nav className={`shadow-lg ${darkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"}`}>
       <div className="max-w-7xl mx-auto px-4">
@@ -31,6 +37,7 @@ const Navbar = () => {
               className="h-12 w-auto"
             />
           </Link>
+
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center space-x-8">
             <Link to="/home" className="hover:text-green-600 px-3 py-2 text-sm font-medium">
@@ -51,7 +58,15 @@ const Navbar = () => {
             >
               {darkMode ? "☀️ Light Mode" : "🌙 Dark Mode"}
             </button>
+            {/* ✅ Logout Button */}
+            <button
+              onClick={handleLogout}
+              className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+            >
+              LOGOUT
+            </button>
           </div>
+
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center">
             <button
@@ -69,26 +84,28 @@ const Navbar = () => {
           </div>
         </div>
       </div>
+
       {/* Mobile Menu */}
       {isOpen && (
         <div className="md:hidden px-2 pt-2 pb-3 space-y-1">
-          <Link to="/what-we-do" className="block px-3 py-2 text-base font-medium hover:text-green-600">
-            WHAT WE DO
+          <Link to="/home" className="block px-3 py-2 text-base font-medium hover:text-green-600">
+            DASHBOARD
           </Link>
-          <Link to="/about" className="block px-3 py-2 text-base font-medium hover:text-green-600">
+          <Link to="/" className="block px-3 py-2 text-base font-medium hover:text-green-600">
             ABOUT US
-          </Link>
-          <Link to="/get-involved" className="block px-3 py-2 text-base font-medium hover:text-green-600">
-            GET INVOLVED
-          </Link>
-          <Link to="/membership" className="block px-3 py-2 text-base font-medium hover:text-green-600">
-            MEMBERSHIP & GIVING
           </Link>
           <button
             onClick={() => setDarkMode(!darkMode)}
             className="block w-full px-4 py-2 text-center rounded-md bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 transition"
           >
             {darkMode ? "☀️ Light Mode" : "🌙 Dark Mode"}
+          </button>
+          {/* ✅ Mobile Logout Button */}
+          <button
+            onClick={handleLogout}
+            className="block w-full px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-center"
+          >
+            LOGOUT
           </button>
         </div>
       )}
