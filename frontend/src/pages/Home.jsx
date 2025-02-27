@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from "react"
 import { Link } from "react-router-dom"
 import { UserContext } from "../context/userContext"
+import { format, parseISO, isValid } from "date-fns";
 import axios from "../config/axios"
 import {
     LineChart,
@@ -52,10 +53,11 @@ const Home = () => {
 
             setFootprintHistory(
                 historyData.map(entry => ({
-                    date: entry.date?.$date ? new Date(entry.date.$date).toLocaleDateString() : "Unknown",
+                    date: entry.date ? new Date(entry.date).toISOString() : "Unknown",
                     footprint: entry.totalFootprint || 0,
                 }))
             );
+
 
 
             // Construct footprint breakdown safely
@@ -102,19 +104,40 @@ const Home = () => {
                 </div>
 
                 {/* Footprint History Chart */}
-                <div className="mt-8 bg-gray-800 p-6 rounded-lg shadow-lg chart-container">
-                    <h2 className="text-2xl font-semibold text-green-400 mb-4">Your Carbon Footprint History</h2>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <LineChart data={footprintHistory}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                            <XAxis dataKey="date" stroke="#888" />
-                            <YAxis stroke="#888" />
-                            <Tooltip contentStyle={{ backgroundColor: "#333", border: "none" }} />
-                            <Legend />
-                            <Line type="monotone" dataKey="footprint" stroke="#8884d8" activeDot={{ r: 8 }} />
-                        </LineChart>
-                    </ResponsiveContainer>
-                </div>
+<div className="mt-8 bg-gray-800 p-6 rounded-lg shadow-lg chart-container">
+    <h2 className="text-2xl font-semibold text-green-400 mb-4">Your Carbon Footprint History</h2>
+    <ResponsiveContainer width="100%" height={300}>
+        <LineChart data={footprintHistory}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+
+            {/* X-Axis: Displaying Date & Time */}
+            <XAxis 
+                dataKey="date" 
+                stroke="#888"
+                tickFormatter={(tick) => {
+                    const parsedDate = parseISO(tick);
+                    return isValid(parsedDate) ? format(parsedDate, "MMM dd, HH:mm") : "Invalid Date";
+                }} 
+            />
+
+            {/* Y-Axis: Carbon Footprint (Number) */}
+            <YAxis stroke="#888" />
+
+            <Tooltip 
+                contentStyle={{ backgroundColor: "#333", border: "none" }} 
+                labelFormatter={(label) => {
+                    const parsedLabel = parseISO(label);
+                    return isValid(parsedLabel) ? format(parsedLabel, "PPpp") : "Invalid Date";
+                }}
+            />
+
+            <Legend />
+            <Line type="monotone" dataKey="footprint" stroke="#8884d8" activeDot={{ r: 8 }} />
+        </LineChart>
+    </ResponsiveContainer>
+</div>
+
+
 
                 {/* Footprint Breakdown */}
                 <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
