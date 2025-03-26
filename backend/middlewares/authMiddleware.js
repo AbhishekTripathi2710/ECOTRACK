@@ -5,16 +5,16 @@ const blacklistTokenModel = require('../models/blacklistTokenModel');
 
 module.exports.authUser = async (req, res, next) => {
     try {
-        const token = req.cookies.token || req.headers.authorization?.split(' ')[1];
+        const token = req.headers.authorization?.split(' ')[1];
 
         if (!token) {
-            return res.status(401).json({ message: 'Unauthorized' });
+            return res.status(401).json({ message: 'Unauthorized - No token provided' });
         }
 
         // Check if token is blacklisted
         const isBlacklisted = await blacklistTokenModel.findOne({ token: token });
         if (isBlacklisted) {
-            return res.status(401).json({ message: 'Unauthorized' });
+            return res.status(401).json({ message: 'Unauthorized - Token is blacklisted' });
         }
 
         // Verify token
@@ -29,6 +29,52 @@ module.exports.authUser = async (req, res, next) => {
         req.user = user;
         next();
     } catch (err) {
-        return res.status(401).json({ message: 'Unauthorized' });
+        console.error('Auth Error:', err);
+        return res.status(401).json({ message: 'Unauthorized - Invalid token' });
     }
+};
+
+exports.protect = async (req, res, next) => {
+    try {
+        let token;
+
+        if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+            token = req.headers.authorization.split(' ')[1];
+        }
+
+        if (!token) {
+            return res.status(401).json({
+                success: false,
+                error: 'Not authorized to access this route'
+            });
+        }
+
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            req.user = await userModel.findById(decoded._id);
+            next();
+        } catch (err) {
+            return res.status(401).json({
+                success: false,
+                error: 'Not authorized to access this route'
+            });
+        }
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: 'Server Error'
+        });
+    }
+};
+
+exports.authorize = (...roles) => {
+    return (req, res, next) => {
+        if (!roles.includes(req.user.role)) {
+            return res.status(403).json({
+                success: false,
+                error: `User role ${req.user.role} is not authorized to access this route`
+            });
+        }
+        next();
+    };
 };

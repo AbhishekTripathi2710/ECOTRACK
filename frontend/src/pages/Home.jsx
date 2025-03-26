@@ -1,8 +1,8 @@
 import { useState, useEffect, useContext } from "react"
 import { Link } from "react-router-dom"
 import { UserContext } from "../context/userContext"
+import { useCarbonFootprint } from "../context/carbonFootprintContext"
 import { format, parseISO, isValid } from "date-fns";
-import axios from "../config/axios"
 import {
     LineChart,
     Line,
@@ -23,79 +23,53 @@ import Footer from "../components/Footer"
 
 const Home = () => {
     const { user } = useContext(UserContext)
-    const [dailyFootprint, setDailyFootprint] = useState(null)
-    const [monthlyFootprint, setMonthlyFootprint] = useState(null)
-    const [footprintHistory, setFootprintHistory] = useState([])
+    const { currentFootprint, monthlyData, footprintHistory, loading } = useCarbonFootprint()
     const [footprintBreakdown, setFootprintBreakdown] = useState([])
 
     useEffect(() => {
-        if (user) {
-            fetchCarbonData()
-        }
-    }, [user])
-
-    const fetchCarbonData = async () => {
-        try {
-            // Fetch latest daily footprint
-            const dailyResponse = await axios.get("/api/carbon/user-data");
-            const dailyData = dailyResponse.data;
-            setDailyFootprint(dailyData.totalFootprint || 0);
-
-            // Fetch monthly footprint from backend
-            const monthlyResponse = await axios.get("/api/carbon/monthly");
-            setMonthlyFootprint(monthlyResponse.data.monthlyFootprint || 0);
-
-            // Fetch footprint history from backend
-            const historyResponse = await axios.get("/api/carbon/history");
-
-            // Ensure historyResponse.data is an array before using map()
-            const historyData = Array.isArray(historyResponse.data.history) ? historyResponse.data.history : [];
-
-            setFootprintHistory(
-                historyData.map(entry => ({
-                    date: entry.date ? new Date(entry.date).toISOString() : "Unknown",
-                    footprint: entry.totalFootprint || 0,
-                }))
-            );
-
-
-
+        if (currentFootprint) {
             // Construct footprint breakdown safely
             const breakdown = [
-                { name: "Public Transport", value: dailyData.transportation?.publicTransport || 0 },
-                { name: "Car", value: dailyData.transportation?.car || 0 },
-                { name: "Bike", value: dailyData.transportation?.bike || 0 },
-                { name: "Flights", value: dailyData.transportation?.flights || 0 },
-                { name: "Electricity", value: dailyData.energy?.electricityBill || 0 },
-                { name: "Gas", value: dailyData.energy?.gasBill || 0 }
+                { name: "Public Transport", value: currentFootprint.transportation?.publicTransport || 0 },
+                { name: "Car", value: currentFootprint.transportation?.car || 0 },
+                { name: "Bike", value: currentFootprint.transportation?.bike || 0 },
+                { name: "Flights", value: currentFootprint.transportation?.flights || 0 },
+                { name: "Electricity", value: currentFootprint.energy?.electricityBill || 0 },
+                { name: "Gas", value: currentFootprint.energy?.gasBill || 0 }
             ];
             setFootprintBreakdown(breakdown);
-        } catch (error) {
-            console.error("Error fetching carbon data:", error);
         }
-    };
-
-
-
+    }, [currentFootprint])
 
     const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042",]
+
+    if (loading) {
+        return (
+            <div className="bg-gray-900 text-white min-h-screen">
+                <Navbar />
+                <div className="flex justify-center items-center h-screen">
+                    <div className="text-2xl">Loading...</div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-gray-900 text-white min-h-screen">
             <Navbar></Navbar>
-            {dailyFootprint > 30 && (
-                    <div className="bg-red-600 text-white p-4 mb-4 rounded-lg shadow-md">
-                        <h3 className="text-lg font-semibold">⚠ High Carbon Footprint Alert!</h3>
-                        <p>Your daily footprint is <strong>{dailyFootprint.toFixed(2)} kg CO₂</strong>. Consider reducing your emissions.</p>
-                    </div>
-                )}
+            {currentFootprint?.carbonFootprint > 30 && (
+                <div className="bg-red-600 text-white p-4 mb-4 rounded-lg shadow-md">
+                    <h3 className="text-lg font-semibold">⚠ High Carbon Footprint Alert!</h3>
+                    <p>Your daily footprint is <strong>{currentFootprint.carbonFootprint.toFixed(2)} kg CO₂</strong>. Consider reducing your emissions.</p>
+                </div>
+            )}
             <main className="max-w-7xl mx-auto py-8 px-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* Daily Footprint Card */}
                     <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
                         <h2 className="text-2xl font-semibold text-green-400 mb-4">Today's Footprint</h2>
                         <p className="text-4xl font-bold">
-                            {dailyFootprint ? `${dailyFootprint.toFixed(2)} kg CO₂` : "Loading..."}
+                            {currentFootprint ? `${currentFootprint.carbonFootprint.toFixed(2)} kg CO₂` : "No data"}
                         </p>
                     </div>
 
@@ -103,46 +77,40 @@ const Home = () => {
                     <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
                         <h2 className="text-2xl font-semibold text-green-400 mb-4">This Month's Footprint</h2>
                         <p className="text-4xl font-bold">
-                            {monthlyFootprint ? `${monthlyFootprint.toFixed(2)} kg CO₂` : "Loading..."}
+                            {monthlyData.length > 0 
+                                ? `${monthlyData.reduce((sum, entry) => sum + entry.carbonFootprint, 0).toFixed(2)} kg CO₂` 
+                                : "No data"}
                         </p>
                     </div>
                 </div>
 
                 {/* Footprint History Chart */}
-<div className="mt-8 bg-gray-800 p-6 rounded-lg shadow-lg chart-container">
-    <h2 className="text-2xl font-semibold text-green-400 mb-4">Your Carbon Footprint History</h2>
-    <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={footprintHistory}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-
-            {/* X-Axis: Displaying Date & Time */}
-            <XAxis 
-                dataKey="date" 
-                stroke="#888"
-                tickFormatter={(tick) => {
-                    const parsedDate = parseISO(tick);
-                    return isValid(parsedDate) ? format(parsedDate, "MMM dd, HH:mm") : "Invalid Date";
-                }} 
-            />
-
-            {/* Y-Axis: Carbon Footprint (Number) */}
-            <YAxis stroke="#888" />
-
-            <Tooltip 
-                contentStyle={{ backgroundColor: "#333", border: "none" }} 
-                labelFormatter={(label) => {
-                    const parsedLabel = parseISO(label);
-                    return isValid(parsedLabel) ? format(parsedLabel, "PPpp") : "Invalid Date";
-                }}
-            />
-
-            <Legend />
-            <Line type="monotone" dataKey="footprint" stroke="#8884d8" activeDot={{ r: 8 }} />
-        </LineChart>
-    </ResponsiveContainer>
-</div>
-
-
+                <div className="mt-8 bg-gray-800 p-6 rounded-lg shadow-lg chart-container">
+                    <h2 className="text-2xl font-semibold text-green-400 mb-4">Your Carbon Footprint History</h2>
+                    <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={footprintHistory}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                            <XAxis 
+                                dataKey="date" 
+                                stroke="#888"
+                                tickFormatter={(tick) => {
+                                    const parsedDate = parseISO(tick);
+                                    return isValid(parsedDate) ? format(parsedDate, "MMM dd, HH:mm") : "Invalid Date";
+                                }} 
+                            />
+                            <YAxis stroke="#888" />
+                            <Tooltip 
+                                contentStyle={{ backgroundColor: "#333", border: "none" }} 
+                                labelFormatter={(label) => {
+                                    const parsedLabel = parseISO(label);
+                                    return isValid(parsedLabel) ? format(parsedLabel, "PPpp") : "Invalid Date";
+                                }}
+                            />
+                            <Legend />
+                            <Line type="monotone" dataKey="carbonFootprint" stroke="#8884d8" activeDot={{ r: 8 }} />
+                        </LineChart>
+                    </ResponsiveContainer>
+                </div>
 
                 {/* Footprint Breakdown */}
                 <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">

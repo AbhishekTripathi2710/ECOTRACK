@@ -101,7 +101,17 @@ exports.getUserHistory = async (req, res) => {
         const userId = req.user._id;
         const history = await CarbonData.find({ userId }).sort({ date: -1 });
 
-        res.status(200).json({ history });
+        // Format the data for the frontend
+        const formattedHistory = history.map(entry => ({
+            date: entry.date,
+            carbonFootprint: entry.totalFootprint,
+            transportation: entry.transportation,
+            energy: entry.energy,
+            waste: entry.waste,
+            food: entry.food
+        }));
+
+        res.status(200).json({ data: formattedHistory });
     } catch (error) {
         console.error("🚨 Error in getUserHistory:", error);
         res.status(500).json({ error: error.message });
@@ -122,7 +132,17 @@ exports.getLatestCarbonData = async (req, res) => {
             return res.status(404).json({ message: "No carbon data found for this user" });
         }
 
-        res.status(200).json(latestEntry);
+        // Format the data for the frontend
+        const formattedData = {
+            date: latestEntry.date,
+            carbonFootprint: latestEntry.totalFootprint,
+            transportation: latestEntry.transportation,
+            energy: latestEntry.energy,
+            waste: latestEntry.waste,
+            food: latestEntry.food
+        };
+
+        res.status(200).json({ data: formattedData });
     } catch (error) {
         console.error("🚨 Error in getLatestCarbonData:", error);
         res.status(500).json({ error: error.message });
@@ -141,20 +161,33 @@ exports.getMonthlyCarbonData = async (req, res) => {
         const currentMonth = today.getMonth();
         const currentYear = today.getFullYear();
 
-        // ✅ Fetch the latest entry from this month
-        const latestEntry = await CarbonData.findOne({
+        // Get all entries for the current month
+        const monthlyEntries = await CarbonData.find({
             userId,
             date: {
                 $gte: new Date(currentYear, currentMonth, 1),
                 $lt: new Date(currentYear, currentMonth + 1, 1),
             },
-        }).sort({ date: -1 });
+        }).sort({ date: 1 });
 
-        if (!latestEntry) {
-            return res.status(200).json({ monthlyFootprint: 0, message: "No data available for this month" });
+        if (!monthlyEntries.length) {
+            return res.status(200).json({ 
+                data: [],
+                message: "No data available for this month" 
+            });
         }
 
-        res.status(200).json({ monthlyFootprint: latestEntry.monthlyFootprint });
+        // Format the data for the frontend
+        const formattedData = monthlyEntries.map(entry => ({
+            date: entry.date,
+            carbonFootprint: entry.totalFootprint,
+            transportation: entry.transportation,
+            energy: entry.energy,
+            waste: entry.waste,
+            food: entry.food
+        }));
+
+        res.status(200).json({ data: formattedData });
     } catch (error) {
         console.error("🚨 Error in getMonthlyCarbonData:", error);
         res.status(500).json({ error: error.message });

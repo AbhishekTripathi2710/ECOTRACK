@@ -6,6 +6,7 @@ import Login from "../pages/Login";
 import Register from "../pages/Register";
 import CarbonCalculator from "../pages/CarbonCalculator";
 import About from "../pages/About";
+import Analytics from '../pages/Analytics';
 
 
 
@@ -18,6 +19,7 @@ const AppRoutes = () => {
             <Route path="/login" element={<Login></Login>}></Route>
             <Route path="/register" element={<Register></Register>}></Route>
             <Route path="/calculator" element={<UserAuth><CarbonCalculator></CarbonCalculator></UserAuth>}></Route>
+            <Route path="/analytics" element={<UserAuth><Analytics /></UserAuth>}></Route>
         </Routes>
         </BrowserRouter>
     )
