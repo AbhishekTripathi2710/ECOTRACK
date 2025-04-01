@@ -44,30 +44,21 @@ const CarbonCalculator = () => {
     const [activeTab, setActiveTab] = useState('calculator');
     const [formData, setFormData] = useState({
         transportation: {
-            car: { distance: 0, fuelType: 'petrol', efficiency: 10 },
-            publicTransport: { bus: 0, train: 0, subway: 0 },
-            flights: []
+            car: 0,
+            bike: 0,
+            publicTransport: 0,
+            flights: 0
         },
         energy: {
-            electricity: { consumption: 0, source: 'grid' },
-            gas: { consumption: 0, type: 'natural' },
-            water: { consumption: 0 }
+            electricityBill: 0,
+            gasBill: 0,
+            lpgCylinders: 0,
+            gasType: "PNG",
+            renewableUsage: false
         },
+        diet: "non-vegetarian",
         food: {
-            dietType: 'omnivore',
-            meatConsumption: 0,
-            dairyConsumption: 0,
-            foodWaste: 0
-        },
-        shopping: {
-            clothing: 0,
-            electronics: 0,
-            other: 0
-        },
-        waste: {
-            recycling: 0,
-            composting: 0,
-            landfill: 0
+            calories: 2000
         }
     });
 
@@ -81,10 +72,7 @@ const CarbonCalculator = () => {
             ...prev,
             [category]: {
                 ...prev[category],
-                [subcategory]: {
-                    ...prev[category][subcategory],
-                    [field]: value
-                }
+                [subcategory]: value
             }
         }));
     };
@@ -92,37 +80,25 @@ const CarbonCalculator = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            if (currentFootprint) {
-                await updateFootprint(currentFootprint._id, formData);
-            } else {
-                await createFootprint(formData);
-            }
+            await createFootprint(formData);
+            // Reset form after successful submission
             setFormData({
                 transportation: {
-                    car: { distance: 0, fuelType: 'petrol', efficiency: 10 },
-                    publicTransport: { bus: 0, train: 0, subway: 0 },
-                    flights: []
+                    car: 0,
+                    bike: 0,
+                    publicTransport: 0,
+                    flights: 0
                 },
                 energy: {
-                    electricity: { consumption: 0, source: 'grid' },
-                    gas: { consumption: 0, type: 'natural' },
-                    water: { consumption: 0 }
+                    electricityBill: 0,
+                    gasBill: 0,
+                    lpgCylinders: 0,
+                    gasType: "PNG",
+                    renewableUsage: false
                 },
+                diet: "non-vegetarian",
                 food: {
-                    dietType: 'omnivore',
-                    meatConsumption: 0,
-                    dairyConsumption: 0,
-                    foodWaste: 0
-                },
-                shopping: {
-                    clothing: 0,
-                    electronics: 0,
-                    other: 0
-                },
-                waste: {
-                    recycling: 0,
-                    composting: 0,
-                    landfill: 0
+                    calories: 2000
                 }
             });
         } catch (err) {
@@ -155,22 +131,19 @@ const CarbonCalculator = () => {
                             <label className="block text-sm font-medium text-gray-700">Car Distance (km)</label>
                             <input
                                 type="number"
-                                value={formData.transportation.car.distance}
+                                value={formData.transportation.car}
                                 onChange={(e) => handleInputChange('transportation', 'car', 'distance', e.target.value)}
                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Fuel Type</label>
-                            <select
-                                value={formData.transportation.car.fuelType}
-                                onChange={(e) => handleInputChange('transportation', 'car', 'fuelType', e.target.value)}
+                            <label className="block text-sm font-medium text-gray-700">Bike Distance (km)</label>
+                            <input
+                                type="number"
+                                value={formData.transportation.bike}
+                                onChange={(e) => handleInputChange('transportation', 'bike', 'distance', e.target.value)}
                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-                            >
-                                <option value="petrol">Petrol</option>
-                                <option value="diesel">Diesel</option>
-                                <option value="electric">Electric</option>
-                            </select>
+                            />
                         </div>
                     </div>
                 </div>
@@ -182,20 +155,20 @@ const CarbonCalculator = () => {
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Electricity (kWh)</label>
+                            <label className="block text-sm font-medium text-gray-700">Electricity Bill (kWh)</label>
                             <input
                                 type="number"
-                                value={formData.energy.electricity.consumption}
-                                onChange={(e) => handleInputChange('energy', 'electricity', 'consumption', e.target.value)}
+                                value={formData.energy.electricityBill}
+                                onChange={(e) => handleInputChange('energy', 'electricityBill', 'consumption', e.target.value)}
                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Gas (m³)</label>
+                            <label className="block text-sm font-medium text-gray-700">Gas Bill (m³)</label>
                             <input
                                 type="number"
-                                value={formData.energy.gas.consumption}
-                                onChange={(e) => handleInputChange('energy', 'gas', 'consumption', e.target.value)}
+                                value={formData.energy.gasBill}
+                                onChange={(e) => handleInputChange('energy', 'gasBill', 'consumption', e.target.value)}
                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
                             />
                         </div>
@@ -211,8 +184,8 @@ const CarbonCalculator = () => {
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Diet Type</label>
                             <select
-                                value={formData.food.dietType}
-                                onChange={(e) => handleInputChange('food', 'dietType', e.target.value)}
+                                value={formData.diet}
+                                onChange={(e) => handleInputChange('diet', 'dietType', e.target.value)}
                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
                             >
                                 <option value="vegan">Vegan</option>
@@ -221,11 +194,11 @@ const CarbonCalculator = () => {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Meat Consumption (kg/week)</label>
+                            <label className="block text-sm font-medium text-gray-700">Calories</label>
                             <input
                                 type="number"
-                                value={formData.food.meatConsumption}
-                                onChange={(e) => handleInputChange('food', 'meatConsumption', e.target.value)}
+                                value={formData.food.calories}
+                                onChange={(e) => handleInputChange('food', 'calories', e.target.value)}
                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
                             />
                         </div>

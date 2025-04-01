@@ -29,7 +29,7 @@ export const CarbonFootprintProvider = ({ children }) => {
     const fetchFootprintHistory = async (period = 30) => {
         try {
             setLoading(true);
-            const response = await axiosInstance.get(`/api/carbon/history?period=${period}`);
+            const response = await axiosInstance.get('/api/carbon/history');
             setFootprintHistory(response.data.data);
         } catch (err) {
             setError(err.response?.data?.error || 'Error fetching footprint history');
@@ -57,8 +57,11 @@ export const CarbonFootprintProvider = ({ children }) => {
             setLoading(true);
             const response = await axiosInstance.post('/api/carbon/submit', footprintData);
             setCurrentFootprint(response.data.data);
-            await fetchFootprintHistory();
-            await fetchMonthlyData();
+            // Refresh both history and monthly data after creating a new footprint
+            await Promise.all([
+                fetchFootprintHistory(),
+                fetchMonthlyData()
+            ]);
             return response.data.data;
         } catch (err) {
             setError(err.response?.data?.error || 'Error creating footprint');
@@ -71,9 +74,11 @@ export const CarbonFootprintProvider = ({ children }) => {
     // Initial data fetch
     useEffect(() => {
         if (user) {
-            fetchCurrentFootprint();
-            fetchFootprintHistory();
-            fetchMonthlyData();
+            Promise.all([
+                fetchCurrentFootprint(),
+                fetchFootprintHistory(),
+                fetchMonthlyData()
+            ]);
         }
     }, [user]);
 
