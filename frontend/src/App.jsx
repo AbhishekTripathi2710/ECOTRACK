@@ -1,16 +1,19 @@
-import { useState } from 'react'
-import { UserProvider } from './context/userContext'
+import { BrowserRouter as Router } from 'react-router-dom'
+import { UserProvider } from './context/UserContext'
 import { CarbonFootprintProvider } from './context/carbonFootprintContext'
 import AppRoutes from './routes/AppRoutes'
-
+import SustainabilityAssistant from './components/SustainabilityAssistant'
 
 function App() {
   return (
-    <UserProvider>
-      <CarbonFootprintProvider>
-        <AppRoutes></AppRoutes>
-      </CarbonFootprintProvider>
-    </UserProvider>
+    <Router>
+      <UserProvider>
+        <CarbonFootprintProvider>
+          <AppRoutes />
+          <SustainabilityAssistant />
+        </CarbonFootprintProvider>
+      </UserProvider>
+    </Router>
   )
 }
 

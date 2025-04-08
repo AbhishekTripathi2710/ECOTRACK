@@ -1,6 +1,7 @@
 import React, { useContext, useState } from "react";
-import { UserContext } from "../context/userContext";
+import { UserContext } from "../context/UserContext";
 import { Link, useNavigate } from "react-router-dom";
+import { logAuthInfo } from "../utils/authDebug";
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -14,9 +15,20 @@ const Login = () => {
         setError('');
 
         try {
+            // Log auth status before login
+            console.log('Authentication status before login:');
+            logAuthInfo();
+            
+            // Perform login
             await login(email, password);
+            
+            // Log auth status after login
+            console.log('Authentication status after login:');
+            logAuthInfo();
+            
             navigate('/');
         } catch (err) {
+            console.error('Login error:', err);
             setError(err.response?.data?.error || 'Login failed');
         }
     }

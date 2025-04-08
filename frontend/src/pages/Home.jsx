@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from "react"
 import { Link } from "react-router-dom"
-import { UserContext } from "../context/userContext"
+import { UserContext } from "../context/UserContext"
 import { useCarbonFootprint } from "../context/carbonFootprintContext"
 import { format, parseISO, isValid } from "date-fns";
 import {
@@ -20,11 +20,38 @@ import {
 } from "recharts"
 import Navbar from "../components/navbar"
 import Footer from "../components/Footer"
+import { 
+    Box, 
+    Typography, 
+    Grid, 
+    Paper, 
+    LinearProgress,
+    Chip,
+    Avatar,
+    CircularProgress,
+    Badge,
+    Divider,
+    Button
+} from '@mui/material'
+import {
+    EmojiEvents as TrophyIcon,
+    CheckCircle as CheckCircleIcon,
+    Star as StarIcon,
+    AccessTime as TimeIcon,
+    Nature as EcoIcon
+} from '@mui/icons-material'
+import { getAllChallenges, getUserChallenges, getAllAchievements, getUserAchievements } from "../services/communityService"
 
 const Home = () => {
     const { user } = useContext(UserContext)
     const { currentFootprint, monthlyData, footprintHistory, loading } = useCarbonFootprint()
     const [footprintBreakdown, setFootprintBreakdown] = useState([])
+    const [challenges, setChallenges] = useState([])
+    const [userChallenges, setUserChallenges] = useState([])
+    const [achievements, setAchievements] = useState([])
+    const [userAchievements, setUserAchievements] = useState([])
+    const [challengesLoading, setChallengesLoading] = useState(true)
+    const [achievementsLoading, setAchievementsLoading] = useState(true)
 
     useEffect(() => {
         if (currentFootprint) {
@@ -41,7 +68,49 @@ const Home = () => {
         }
     }, [currentFootprint])
 
+    // Fetch challenges and achievements
+    useEffect(() => {
+        const fetchChallengesAndAchievements = async () => {
+            if (user && user._id) {
+                try {
+                    setChallengesLoading(true);
+                    setAchievementsLoading(true);
+                    
+                    // Fetch challenges data
+                    const allChallenges = await getAllChallenges();
+                    setChallenges(allChallenges || []);
+                    
+                    const userChallengesData = await getUserChallenges(user._id);
+                    setUserChallenges(userChallengesData || []);
+                    
+                    // Fetch achievements data
+                    const allAchievements = await getAllAchievements();
+                    setAchievements(allAchievements || []);
+                    
+                    const userAchievementsData = await getUserAchievements(user._id);
+                    setUserAchievements(userAchievementsData || []);
+                } catch (err) {
+                    console.error("Error fetching challenges/achievements:", err);
+                } finally {
+                    setChallengesLoading(false);
+                    setAchievementsLoading(false);
+                }
+            }
+        };
+        
+        fetchChallengesAndAchievements();
+    }, [user]);
+
     const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042",]
+
+    const renderBadgeIcon = (index) => {
+        const icons = [
+            <StarIcon sx={{ fontSize: 30, color: 'white' }} />,
+            <TrophyIcon sx={{ fontSize: 30, color: 'white' }} />,
+            <CheckCircleIcon sx={{ fontSize: 30, color: 'white' }} />
+        ];
+        return icons[index % icons.length];
+    };
 
     if (loading) {
         return (
@@ -82,6 +151,228 @@ const Home = () => {
                                 : "No data"}
                         </p>
                     </div>
+                </div>
+
+                {/* User Achievements Section */}
+                <div className="mt-8 bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-2xl font-semibold text-green-400">Your Achievements</h2>
+                        <Link to="/community" className="text-green-400 hover:text-green-300 text-sm">
+                            View All →
+                        </Link>
+                    </div>
+                    
+                    {achievementsLoading ? (
+                        <div className="flex justify-center items-center py-8">
+                            <CircularProgress size={40} sx={{ color: '#4caf50' }} />
+                        </div>
+                    ) : userAchievements.length > 0 ? (
+                        <Grid container spacing={2} className="mb-4">
+                            {userAchievements.slice(0, 3).map((achievement, index) => (
+                                <Grid item xs={12} sm={4} key={achievement.id}>
+                                    <Paper 
+                                        sx={{ 
+                                            p: 2, 
+                                            bgcolor: 'rgba(40, 40, 40, 0.8)', 
+                                            borderRadius: 3,
+                                            height: '100%',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
+                                            border: '1px solid rgba(76, 175, 80, 0.3)',
+                                            transition: 'transform 0.2s',
+                                            '&:hover': {
+                                                transform: 'translateY(-5px)',
+                                            }
+                                        }}
+                                    >
+                                        <Badge
+                                            overlap="circular"
+                                            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                                            badgeContent={
+                                                <Avatar sx={{ width: 22, height: 22, bgcolor: '#4caf50', fontSize: 14 }}>
+                                                    <CheckCircleIcon fontSize="small" />
+                                                </Avatar>
+                                            }
+                                        >
+                                            <Avatar 
+                                                sx={{ 
+                                                    width: 60, 
+                                                    height: 60, 
+                                                    bgcolor: '#4caf50',
+                                                    mb: 1,
+                                                    boxShadow: '0 4px 8px rgba(76, 175, 80, 0.5)'
+                                                }}
+                                            >
+                                                {renderBadgeIcon(index)}
+                                            </Avatar>
+                                        </Badge>
+                                        <Typography 
+                                            variant="h6" 
+                                            align="center"
+                                            sx={{ 
+                                                fontSize: '1rem', 
+                                                fontWeight: 600,
+                                                color: 'white',
+                                                mt: 1
+                                            }}
+                                        >
+                                            {achievement.title}
+                                        </Typography>
+                                        <Chip 
+                                            label={`${achievement.points || 0} points`} 
+                                            size="small"
+                                            sx={{ 
+                                                bgcolor: 'rgba(76, 175, 80, 0.2)', 
+                                                color: '#81c784',
+                                                mt: 1
+                                            }} 
+                                        />
+                                    </Paper>
+                                </Grid>
+                            ))}
+                        </Grid>
+                    ) : (
+                        <Paper 
+                            sx={{ 
+                                p: 3, 
+                                bgcolor: 'rgba(40, 40, 40, 0.5)', 
+                                borderRadius: 2,
+                                textAlign: 'center'
+                            }}
+                        >
+                            <Typography variant="body1" sx={{ color: 'text.secondary', mb: 2 }}>
+                                You haven't earned any achievements yet.
+                            </Typography>
+                            <Button 
+                                component={Link}
+                                to="/community"
+                                variant="outlined"
+                                color="primary"
+                                size="small"
+                            >
+                                Explore Achievements
+                            </Button>
+                        </Paper>
+                    )}
+                </div>
+
+                {/* User Challenges Section */}
+                <div className="mt-8 bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-2xl font-semibold text-green-400">Active Challenges</h2>
+                        <Link to="/contests" className="text-green-400 hover:text-green-300 text-sm">
+                            View All →
+                        </Link>
+                    </div>
+                    
+                    {challengesLoading ? (
+                        <div className="flex justify-center items-center py-8">
+                            <CircularProgress size={40} sx={{ color: '#4caf50' }} />
+                        </div>
+                    ) : userChallenges.length > 0 ? (
+                        <Grid container spacing={2} className="mb-4">
+                            {userChallenges.slice(0, 3).map((challenge) => (
+                                <Grid item xs={12} key={challenge.id}>
+                                    <Paper 
+                                        sx={{ 
+                                            p: 3, 
+                                            bgcolor: 'rgba(40, 40, 40, 0.8)', 
+                                            borderRadius: 3,
+                                            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
+                                            border: '1px solid rgba(76, 175, 80, 0.3)',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            height: '100%',
+                                            width: '300px'
+                                        }}
+                                    >
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                                            <Box>
+                                                <Typography variant="h6" sx={{ color: 'white', mb: 0.5 }}>
+                                                    {challenge.title}
+                                                </Typography>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                                    <TimeIcon sx={{ fontSize: 14, color: '#b0b0b0', mr: 0.5 }} />
+                                                    <Typography variant="caption" sx={{ color: '#b0b0b0' }}>
+                                                        {challenge.daysLeft ? `${challenge.daysLeft} days left` : 'Ongoing'}
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
+                                            <Chip 
+                                                label={challenge.progress >= 100 ? 'Completed' : 'In Progress'} 
+                                                size="small"
+                                                color={challenge.progress >= 100 ? 'success' : 'primary'}
+                                                variant={challenge.progress >= 100 ? 'filled' : 'outlined'}
+                                            />
+                                        </Box>
+                                        
+                                        <Typography 
+                                            variant="body2" 
+                                            sx={{ 
+                                                color: '#b0b0b0', 
+                                                mb: 2,
+                                                height: '3em',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                display: '-webkit-box',
+                                                WebkitLineClamp: 2,
+                                                WebkitBoxOrient: 'vertical'
+                                            }}
+                                        >
+                                            {challenge.description}
+                                        </Typography>
+                                        
+                                        <Box sx={{ mt: 'auto' }}>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                                                <Typography variant="body2" sx={{ color: '#b0b0b0' }}>
+                                                    Progress
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ color: 'white', fontWeight: 'bold' }}>
+                                                    {challenge.progress}%
+                                                </Typography>
+                                            </Box>
+                                            <LinearProgress 
+                                                variant="determinate" 
+                                                value={challenge.progress} 
+                                                sx={{ 
+                                                    height: 8, 
+                                                    borderRadius: 4,
+                                                    bgcolor: 'rgba(255, 255, 255, 0.1)',
+                                                    '& .MuiLinearProgress-bar': {
+                                                        bgcolor: '#4caf50',
+                                                    }
+                                                }}
+                                            />
+                                        </Box>
+                                    </Paper>
+                                </Grid>
+                            ))}
+                        </Grid>
+                    ) : (
+                        <Paper 
+                            sx={{ 
+                                p: 3, 
+                                bgcolor: 'rgba(40, 40, 40, 0.5)', 
+                                borderRadius: 2,
+                                textAlign: 'center'
+                            }}
+                        >
+                            <Typography variant="body1" sx={{ color: 'text.secondary', mb: 2 }}>
+                                You haven't joined any challenges yet.
+                            </Typography>
+                            <Button 
+                                component={Link}
+                                to="/contests"
+                                variant="outlined"
+                                color="primary"
+                                size="small"
+                            >
+                                Join Challenges
+                            </Button>
+                        </Paper>
+                    )}
                 </div>
 
                 {/* Footprint History Chart */}

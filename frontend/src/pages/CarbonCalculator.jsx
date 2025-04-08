@@ -2,16 +2,19 @@
 
 import { useContext, useEffect, useState } from "react"
 import StepWizard from "react-step-wizard"
-import { UserContext } from "../context/userContext"
+import { UserContext } from "../context/UserContext"
 import { useNavigate } from "react-router-dom"
 import axios from "../config/axios"
 import Navbar from "../components/navbar"
 import Footer from "../components/Footer"
 import { motion } from "framer-motion" // For smooth animations
+import { awardFootprintPoints, checkAchievements } from "../services/communityService" // Import the function to award points and check achievements
 
 const CarbonCalculator = () => {
   const { user } = useContext(UserContext)
   const navigate = useNavigate()
+  const [pointsAwarded, setPointsAwarded] = useState(0)
+  const [successMessage, setSuccessMessage] = useState("")
 
   const [formData, setFormData] = useState({
     electricityBill: "",
@@ -38,8 +41,10 @@ const CarbonCalculator = () => {
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = async () => {
-    setError(null)
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    
     try {
       let gasBill = 0
       let lpgCylinders = 0
@@ -63,10 +68,62 @@ const CarbonCalculator = () => {
       const response = await axios.post("/api/carbon/submit", requestData)
       if (response.data.dailyFootprint !== undefined) {
         setCarbonFootprint(response.data.dailyFootprint)
+        
+        // Award points for calculating carbon footprint
+        console.log("User object:", user);
+        if (user) {
+          const userId = user._id || user.id;
+          if (userId) {
+            console.log("Awarding points to user ID:", userId);
+            try {
+              const pointsResponse = await awardFootprintPoints(userId)
+              console.log("Points response:", pointsResponse);
+              if (pointsResponse && pointsResponse.points) {
+                setPointsAwarded(pointsResponse.points)
+              }
+            } catch (pointsErr) {
+              console.error("Error awarding points:", pointsErr)
+              // Don't display an error to the user, but log it
+            }
+          } else {
+            console.log("User object exists but missing ID (_id or id)");
+          }
+        } else {
+          console.log("User not logged in, can't award points");
+        }
+
+        // After saving carbon data, check for achievements
+        if (user && user._id) {
+          try {
+            const result = await checkAchievements(user._id, {
+              currentFootprint: response.data.dailyFootprint,
+              history: [
+                ...(user.carbonData?.history || []),
+                {
+                  date: new Date(),
+                  carbonFootprint: response.data.dailyFootprint.total
+                }
+              ]
+            });
+            
+            if (result.newAchievements && result.newAchievements.length > 0) {
+              setSuccessMessage(`Carbon footprint saved! You've earned ${result.newAchievements.length} new achievement${result.newAchievements.length > 1 ? 's' : ''}!`);
+            } else {
+              setSuccessMessage('Carbon footprint saved successfully!');
+            }
+          } catch (error) {
+            console.error('Failed to check achievements:', error);
+            // Continue with normal success message
+            setSuccessMessage('Carbon footprint saved successfully!');
+          }
+        } else {
+          setSuccessMessage('Carbon footprint saved successfully!');
+        }
       } else {
         setError("Unexpected response format")
       }
     } catch (err) {
+      console.error("Error submitting carbon data:", err);
       setError("Failed to calculate. Please try again.")
     }
   }
@@ -88,9 +145,15 @@ const CarbonCalculator = () => {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-6 p-4 bg-green-600 text-white rounded-lg text-center">
             <h3 className="text-xl font-semibold">Your Daily Carbon Footprint:</h3>
             <p className="text-2xl font-bold">{carbonFootprint} kg CO₂</p>
+            {pointsAwarded > 0 && (
+              <p className="text-lg mt-2">
+                <span className="font-bold">+{pointsAwarded} points</span> awarded to your community profile!
+              </p>
+            )}
           </motion.div>
         )}
 
+        {successMessage && <p className="text-green-500 mt-4 text-center">{successMessage}</p>}
         {error && <p className="text-red-500 mt-4 text-center">{error}</p>}
       </div>
       <Footer />

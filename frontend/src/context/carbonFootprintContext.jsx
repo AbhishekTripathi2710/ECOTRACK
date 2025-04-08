@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axiosInstance from '../config/axios';
-import { useUser } from './userContext';
+import { useUser } from './UserContext';
 
 const CarbonFootprintContext = createContext();
 

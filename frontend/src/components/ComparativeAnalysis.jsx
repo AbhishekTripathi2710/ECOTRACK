@@ -21,27 +21,68 @@ const ComparativeAnalysis = () => {
     // Calculate total emissions for each category from monthly data
     const processedData = categories.map(category => {
         const total = monthlyData.reduce((sum, month) => {
-            // Ensure we're working with numbers and handle undefined/null values
-            const value = Number(month[category]) || 0;
-            return sum + value;
+            // Different handling based on category type
+            if (category === 'transportation' && month.transportation) {
+                // Sum all transportation values (car, bike, etc.)
+                const transportValues = Object.values(month.transportation);
+                const transportTotal = transportValues.reduce((subSum, val) => subSum + (Number(val) || 0), 0);
+                return sum + transportTotal;
+            } else if (category === 'energy' && month.energy) {
+                // Sum all energy values
+                const energyValues = Object.values(month.energy);
+                const energyTotal = energyValues.reduce((subSum, val) => {
+                    // Skip non-numeric values like gasType
+                    return typeof val === 'number' ? subSum + val : subSum;
+                }, 0);
+                return sum + energyTotal;
+            } else {
+                // For other categories or if the expected structure isn't found
+                let value = 0;
+                
+                // Try to get the value based on category
+                if (month[category]) {
+                    if (typeof month[category] === 'object') {
+                        // If it's an object, sum its numeric values
+                        value = Object.values(month[category]).reduce((subSum, val) => {
+                            return typeof val === 'number' ? subSum + val : subSum;
+                        }, 0);
+                    } else {
+                        // If it's a direct value
+                        value = Number(month[category]) || 0;
+                    }
+                }
+                
+                return sum + value;
+            }
         }, 0);
 
         return {
             category,
             value: total
         };
-    });
+    }).filter(item => item.value > 0); // Only include categories with data
 
     // Calculate total emissions for the summary
     const totalEmissions = processedData.reduce((sum, item) => sum + item.value, 0);
 
     // Find the largest contributor
-    const largestContributor = processedData.reduce((max, current) => 
-        current.value > max.value ? current : max
-    );
+    const largestContributor = processedData.length > 0 
+        ? processedData.reduce((max, current) => current.value > max.value ? current : max, processedData[0])
+        : { category: 'N/A', value: 0 };
 
     if (loading) return <div className="text-center py-4 text-gray-300">Loading...</div>;
     if (error) return <div className="text-center py-4 text-red-500">{error}</div>;
+    
+    if (processedData.length === 0) {
+        return (
+            <div className="bg-gray-800 rounded-xl shadow-lg p-6">
+                <h2 className="text-2xl font-bold text-white mb-4">Emission Sources Analysis</h2>
+                <div className="text-center py-8 text-gray-300">
+                    No emission data available. Please calculate your carbon footprint to see analysis.
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-gray-800 rounded-xl shadow-lg p-6">

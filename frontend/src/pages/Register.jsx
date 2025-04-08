@@ -1,6 +1,6 @@
 import React, { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { UserContext } from "../context/userContext";
+import { UserContext } from "../context/UserContext";
 
 const Register = () => {
     const [firstname, setFirstname] = useState('');

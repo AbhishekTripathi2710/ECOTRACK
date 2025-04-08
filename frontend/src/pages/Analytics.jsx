@@ -6,14 +6,16 @@ import ComparativeAnalysis from '../components/ComparativeAnalysis';
 import MLPredictions from '../components/MLPredictions';
 import IndustryBenchmarks from '../components/IndustryBenchmarks';
 import CarbonReductionRoadmap from '../components/CarbonReductionRoadmap';
+import CarbonReductionSuggestions from '../components/CarbonReductionSuggestions';
 import { useCarbonFootprint } from '../context/carbonFootprintContext';
 import Navbar from '../components/navbar';
-import { FaChartLine, FaChartBar, FaChartArea, FaBrain } from 'react-icons/fa';
+import { FaChartLine, FaChartBar, FaChartArea, FaBrain, FaLeaf } from 'react-icons/fa';
 
 const Analytics = () => {
     const { user } = useUser();
     const navigate = useNavigate();
     const { currentFootprint, monthlyData, loading, error } = useCarbonFootprint();
+    const carbonData = { currentFootprint, monthlyData };
 
     useEffect(() => {
         if (!user) {
@@ -67,6 +69,17 @@ const Analytics = () => {
                         </div>
                     </div>
                 )}
+
+                {/* Personalized Reduction Suggestions */}
+                <div className="mb-8">
+                    <h2 className="text-2xl font-semibold text-white mb-4 flex items-center gap-2">
+                        <FaLeaf className="text-green-400" />
+                        Personalized Suggestions
+                    </h2>
+                    <div className="bg-gray-800 rounded-lg p-6 shadow-lg">
+                        <CarbonReductionSuggestions carbonData={carbonData} />
+                    </div>
+                </div>
 
                 {/* ML Predictions */}
                 <div className="mb-8">

@@ -1,127 +1,236 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import {
+  AppBar,
+  Toolbar,
+  Button,
+  IconButton,
+  Box,
+  Drawer,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  useTheme,
+  useMediaQuery,
+  alpha,
+  ThemeProvider,
+  createTheme
+} from '@mui/material';
+import {
+  Dashboard as DashboardIcon,
+  Analytics as AnalyticsIcon,
+  People as PeopleIcon,
+  EmojiEvents as ContestsIcon,
+  Info as AboutIcon,
+  Calculate as CalculatorIcon,
+  Logout as LogoutIcon,
+  Menu as MenuIcon,
+  Close as CloseIcon
+} from '@mui/icons-material';
+
+// Create a dark theme for the navbar
+const darkTheme = createTheme({
+  palette: {
+    mode: 'dark',
+    primary: {
+      main: '#4caf50',
+      light: '#81c784',
+      dark: '#388e3c',
+    },
+    secondary: {
+      main: '#ff9800',
+      light: '#ffb74d',
+      dark: '#f57c00',
+    },
+    background: {
+      default: '#121212',
+      paper: '#1e1e1e',
+    },
+    text: {
+      primary: '#ffffff',
+      secondary: '#b0b0b0',
+    },
+  },
+  components: {
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#1e1e1e',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+          textTransform: 'none',
+          fontWeight: 500,
+        },
+      },
+    },
+  },
+});
 
 const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(
-    localStorage.getItem("theme") === "dark"
-  );
+  const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
+  const theme = darkTheme; // Use dark theme directly
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
-  }, [darkMode]);
-
-  // ✅ Logout Function
   const handleLogout = () => {
-    localStorage.removeItem("authToken"); // Remove token
-    navigate("/login"); // Redirect to login page
+    localStorage.removeItem("authToken");
+    navigate("/login");
   };
 
+  const menuItems = [
+    { text: 'DASHBOARD', icon: <DashboardIcon />, path: '/home', color: 'inherit' },
+    { text: 'ANALYTICS', icon: <AnalyticsIcon />, path: '/analytics', color: 'primary' },
+    { text: 'COMMUNITY', icon: <PeopleIcon />, path: '/community', color: 'inherit' },
+    { text: 'CONTESTS', icon: <ContestsIcon />, path: '/contests', color: 'inherit' },
+    { text: 'ABOUT US', icon: <AboutIcon />, path: '/', color: 'inherit' },
+  ];
+
+  const drawer = (
+    <Box sx={{ width: '100%' }}>
+      <List>
+        {menuItems.map((item) => (
+          <ListItem 
+            key={item.text} 
+            component={Link} 
+            to={item.path}
+            sx={{
+              '&:hover': {
+                bgcolor: alpha(theme.palette.primary.main, 0.1),
+              }
+            }}
+          >
+            <ListItemIcon sx={{ color: item.color }}>
+              {item.icon}
+            </ListItemIcon>
+            <ListItemText primary={item.text} />
+          </ListItem>
+        ))}
+        <ListItem 
+          onClick={handleLogout}
+          sx={{
+            '&:hover': {
+              bgcolor: alpha(theme.palette.error.main, 0.1),
+            },
+            cursor: 'pointer'
+          }}
+        >
+          <ListItemIcon sx={{ color: 'error.main' }}>
+            <LogoutIcon />
+          </ListItemIcon>
+          <ListItemText primary="LOGOUT" sx={{ color: 'error.main' }} />
+        </ListItem>
+      </List>
+    </Box>
+  );
+
   return (
-    <nav className={`shadow-lg ${darkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"}`}>
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex justify-between h-16 items-center">
-          <Link to="/" className="flex-shrink-0">
+    <ThemeProvider theme={darkTheme}>
+      <AppBar 
+        position="sticky" 
+        sx={{ 
+          bgcolor: 'background.paper',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
+          borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`
+        }}
+      >
+        <Toolbar sx={{ justifyContent: 'space-between' }}>
+          <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
             <img
               src="https://media.istockphoto.com/id/1401304047/vector/reduce-your-carbon-footprint-logo-net-zero-emission.jpg?s=612x612&w=0&k=20&c=xub0yqSnVW4NN827DP0k7VPy5Gc3SSZ-4PbgITJbKVo="
               alt="Logo"
-              className="h-12 w-auto"
+              style={{ height: '40px', width: 'auto' }}
             />
           </Link>
 
-          {/* Desktop Menu */}
-          <div className="hidden md:flex items-center space-x-8">
-            <Link to="/home" className="hover:text-green-600 px-3 py-2 text-sm font-medium">
-              DASHBOARD
-            </Link>
-            <Link to="/analytics" className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors flex items-center">
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-              ANALYTICS
-            </Link>
-            <Link to="/" className="hover:text-green-600 px-3 py-2 text-sm font-medium">
-              ABOUT US
-            </Link>
-            <button
-              onClick={() => navigate("/calculator")}
-              className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors"
+          {isMobile ? (
+            <IconButton
+              color="inherit"
+              edge="end"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              sx={{ color: 'text.primary' }}
             >
-              CALCULATE FOOTPRINT
-            </button>
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              className="px-4 py-2 rounded-md bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 transition"
-            >
-              {darkMode ? "☀️ Light Mode" : "🌙 Dark Mode"}
-            </button>
-            {/* ✅ Logout Button */}
-            <button
-              onClick={handleLogout}
-              className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-            >
-              LOGOUT
-            </button>
-          </div>
+              {mobileOpen ? <CloseIcon /> : <MenuIcon />}
+            </IconButton>
+          ) : (
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+              {menuItems.map((item) => (
+                <Button
+                  key={item.text}
+                  component={Link}
+                  to={item.path}
+                  startIcon={item.icon}
+                  sx={{
+                    color: item.color,
+                    '&:hover': {
+                      bgcolor: alpha(theme.palette.primary.main, 0.1),
+                    }
+                  }}
+                >
+                  {item.text}
+                </Button>
+              ))}
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<CalculatorIcon />}
+                onClick={() => navigate("/calculator")}
+                sx={{
+                  boxShadow: '0 4px 14px rgba(76, 175, 80, 0.3)',
+                  '&:hover': {
+                    boxShadow: '0 6px 20px rgba(76, 175, 80, 0.4)',
+                  }
+                }}
+              >
+                CALCULATE FOOTPRINT
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                startIcon={<LogoutIcon />}
+                onClick={handleLogout}
+                sx={{
+                  boxShadow: '0 4px 14px rgba(244, 67, 54, 0.3)',
+                  '&:hover': {
+                    boxShadow: '0 6px 20px rgba(244, 67, 54, 0.4)',
+                  }
+                }}
+              >
+                LOGOUT
+              </Button>
+            </Box>
+          )}
+        </Toolbar>
 
-          {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center">
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="p-2 rounded-md hover:text-green-600"
-            >
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                {isOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                )}
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Menu */}
-      {isOpen && (
-        <div className="md:hidden px-2 pt-2 pb-3 space-y-1">
-          <Link to="/home" className="block px-3 py-2 text-base font-medium hover:text-green-600">
-            DASHBOARD
-          </Link>
-          <Link to="/analytics" className="block px-3 py-2 text-base font-medium bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors flex items-center">
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-            ANALYTICS
-          </Link>
-          <Link to="/" className="block px-3 py-2 text-base font-medium hover:text-green-600">
-            ABOUT US
-          </Link>
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className="block w-full px-4 py-2 text-center rounded-md bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 transition"
-          >
-            {darkMode ? "☀️ Light Mode" : "🌙 Dark Mode"}
-          </button>
-          {/* ✅ Mobile Logout Button */}
-          <button
-            onClick={handleLogout}
-            className="block w-full px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-center"
-          >
-            LOGOUT
-          </button>
-        </div>
-      )}
-    </nav>
+        <Drawer
+          variant="temporary"
+          anchor="right"
+          open={mobileOpen}
+          onClose={() => setMobileOpen(false)}
+          ModalProps={{
+            keepMounted: true,
+          }}
+          PaperProps={{
+            sx: {
+              bgcolor: 'background.paper',
+              width: 280,
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
+            }
+          }}
+        >
+          {drawer}
+        </Drawer>
+      </AppBar>
+    </ThemeProvider>
   );
 };
 

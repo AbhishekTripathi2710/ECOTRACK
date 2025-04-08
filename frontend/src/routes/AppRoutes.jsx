@@ -1,27 +1,41 @@
 import React from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
-import UserAuth from "../auth/UserAuth";
-import Home from "../pages/hOME.JSX";
+import { Route, Routes } from "react-router-dom";
+import { useUser } from "../context/UserContext";
+import Home from "../pages/Home";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import CarbonCalculator from "../pages/CarbonCalculator";
 import About from "../pages/About";
 import Analytics from '../pages/Analytics';
+import Community from '../components/Community';
+import Contests from '../pages/Contests';
 
-
+const ProtectedRoute = ({ children }) => {
+    const { user, loading } = useUser();
+    
+    if (loading) {
+        return <div>Loading...</div>;
+    }
+    
+    if (!user) {
+        return <Login />;
+    }
+    
+    return children;
+};
 
 const AppRoutes = () => {
     return(
-        <BrowserRouter>
         <Routes>
-            <Route path="/" element={<UserAuth><About></About></UserAuth>}></Route>
-            <Route path="/home"  element={<UserAuth><Home></Home></UserAuth>}></Route>
-            <Route path="/login" element={<Login></Login>}></Route>
-            <Route path="/register" element={<Register></Register>}></Route>
-            <Route path="/calculator" element={<UserAuth><CarbonCalculator></CarbonCalculator></UserAuth>}></Route>
-            <Route path="/analytics" element={<UserAuth><Analytics /></UserAuth>}></Route>
+            <Route path="/" element={<ProtectedRoute><About /></ProtectedRoute>} />
+            <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/calculator" element={<ProtectedRoute><CarbonCalculator /></ProtectedRoute>} />
+            <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+            <Route path="/community" element={<Community />} />
+            <Route path="/contests" element={<Contests />} />
         </Routes>
-        </BrowserRouter>
     )
 }
 
