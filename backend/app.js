@@ -7,6 +7,8 @@ const userRoutes = require('./routes/userRoutes');
 const carbonRoutes = require("./routes/carbonRoutes");
 const communityRoutes = require('./routes/communityRoutes');
 const aiRoutes = require('./routes/aiRoutes');
+const emailRoutes = require('./routes/emailRoutes');
+const emailScheduler = require('./services/emailScheduler');
 const cors = require("cors");
 
 dotenv.config();
@@ -29,6 +31,13 @@ app.use('/api/users', userRoutes);
 app.use('/api/carbon', carbonRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/email', emailRoutes);
+
+// Initialize email scheduler for automated notifications
+if (process.env.NODE_ENV !== 'test') {
+    emailScheduler.initializeSchedulers();
+    console.log('Email schedulers initialized');
+}
 
 // Error handling middleware
 app.use((err, req, res, next) => {

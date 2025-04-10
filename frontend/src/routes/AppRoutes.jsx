@@ -9,6 +9,7 @@ import About from "../pages/About";
 import Analytics from '../pages/Analytics';
 import Community from '../components/Community';
 import Contests from '../pages/Contests';
+import Profile from "../pages/Profile";
 
 const ProtectedRoute = ({ children }) => {
     const { user, loading } = useUser();
@@ -33,8 +34,9 @@ const AppRoutes = () => {
             <Route path="/register" element={<Register />} />
             <Route path="/calculator" element={<ProtectedRoute><CarbonCalculator /></ProtectedRoute>} />
             <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
-            <Route path="/community" element={<Community />} />
-            <Route path="/contests" element={<Contests />} />
+            <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
+            <Route path="/contests" element={<ProtectedRoute><Contests /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         </Routes>
     )
 }

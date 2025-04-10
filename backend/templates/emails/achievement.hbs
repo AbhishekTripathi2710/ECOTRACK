@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>New Achievement Unlocked!</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #FF9800;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 0 0 5px 5px;
+        }
+        .achievement {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: center;
+            border: 2px solid #FF9800;
+        }
+        .achievement-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #FF9800;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎉 Achievement Unlocked! 🎉</h1>
+    </div>
+    <div class="content">
+        <p>Hi {{name}},</p>
+        <p>Congratulations! You've just unlocked a new achievement in your sustainability journey.</p>
+
+        <div class="achievement">
+            <div class="achievement-icon">{{achievementIcon}}</div>
+            <h2>{{achievementName}}</h2>
+            <p>{{achievementDescription}}</p>
+            
+            <div style="margin-top: 15px; font-style: italic; color: #555;">
+                <p>{{achievementImpact}}</p>
+            </div>
+            
+            {{#if nextMilestone}}
+            <div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px;">
+                <p><strong>Next milestone:</strong> {{nextMilestone}}</p>
+            </div>
+            {{/if}}
+            
+            <div style="margin-top: 15px; font-size: 12px; color: #777;">
+                Achieved on: {{dateEarned}}
+            </div>
+        </div>
+
+        <p>Keep up the great work in reducing your carbon footprint!</p>
+        <a href="{{dashboardUrl}}" class="button">View All Achievements</a>
+    </div>
+</body>
+</html> 

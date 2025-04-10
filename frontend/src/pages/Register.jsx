@@ -1,6 +1,74 @@
-import React, { useContext, useState } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { UserContext } from "../context/UserContext";
+import { useUser } from "../context/UserContext";
+import {
+  Container,
+  Box,
+  Typography,
+  TextField,
+  Button,
+  Paper,
+  Alert,
+  Grid,
+  ThemeProvider,
+  createTheme
+} from '@mui/material';
+import Navbar from '../components/navbar';
+
+// Create dark theme
+const darkTheme = createTheme({
+  palette: {
+    mode: 'dark',
+    primary: {
+      main: '#4caf50',
+      light: '#81c784',
+      dark: '#388e3c',
+    },
+    secondary: {
+      main: '#ff9800',
+      light: '#ffb74d',
+      dark: '#f57c00',
+    },
+    background: {
+      default: '#121212',
+      paper: '#1e1e1e',
+    },
+    text: {
+      primary: '#ffffff',
+      secondary: '#b0b0b0',
+    },
+  },
+  components: {
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#1e1e1e',
+          borderRadius: 12,
+          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)',
+          border: '1px solid rgba(255, 255, 255, 0.05)',
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+          textTransform: 'none',
+          fontWeight: 500,
+        },
+      },
+    },
+    MuiTextField: {
+      styleOverrides: {
+        root: {
+          '& .MuiOutlinedInput-root': {
+            borderRadius: 8,
+          },
+        },
+      },
+    },
+  },
+});
 
 const Register = () => {
     const [firstname, setFirstname] = useState('');
@@ -8,7 +76,7 @@ const Register = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const { register } = useContext(UserContext);
+    const { register } = useUser();
     const navigate = useNavigate();
 
     async function submitHandler(e) {
@@ -28,75 +96,96 @@ const Register = () => {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-900">
-            <div className="bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md">
-                <h2 className="text-2xl font-bold text-white mb-6">Register</h2>
-                {error && (
-                    <div className="mb-4 p-3 bg-red-500 text-white rounded">
-                        {error}
-                    </div>
-                )}
-                <form onSubmit={submitHandler}>
-                    <div className="mb-4">
-                        <label className="block text-gray-400 mb-2" htmlFor="firstname">First Name</label>
-                        <input
-                            value={firstname}
-                            onChange={(e) => setFirstname(e.target.value)}
-                            type="text"
-                            id="firstname"
-                            className="w-full p-3 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Enter your first name"
-                            required
-                        />
-                    </div>
-                    <div className="mb-4">
-                        <label className="block text-gray-400 mb-2" htmlFor="lastname">Last Name</label>
-                        <input
-                            value={lastname}
-                            onChange={(e) => setLastname(e.target.value)}
-                            type="text"
-                            id="lastname"
-                            className="w-full p-3 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Enter your last name"
-                            required
-                        />
-                    </div>
-                    <div className="mb-4">
-                        <label className="block text-gray-400 mb-2" htmlFor="email">Email</label>
-                        <input
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            type="email"
-                            id="email"
-                            className="w-full p-3 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Enter your email"
-                            required
-                        />
-                    </div>
-                    <div className="mb-6">
-                        <label className="block text-gray-400 mb-2" htmlFor="password">Password</label>
-                        <input
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            type="password"
-                            id="password"
-                            className="w-full p-3 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Enter your password"
-                            required
-                        />
-                    </div>
-                    <button
-                        type="submit"
-                        className="w-full p-3 rounded bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      <ThemeProvider theme={darkTheme}>
+        <Navbar />
+        <Box sx={{ backgroundColor: 'background.default', minHeight: 'calc(100vh - 64px)', py: 4, display: 'flex', alignItems: 'center' }}>
+          <Container maxWidth="sm">
+            <Paper elevation={0} sx={{ p: 4 }}>
+              <Typography variant="h4" gutterBottom sx={{ fontWeight: 600, color: 'text.primary', mb: 3, textAlign: 'center' }}>
+                Create an Account
+              </Typography>
+              
+              {error && (
+                <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+                  {error}
+                </Alert>
+              )}
+              
+              <form onSubmit={submitHandler}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="First Name"
+                      value={firstname}
+                      onChange={(e) => setFirstname(e.target.value)}
+                      required
+                      margin="normal"
+                      variant="outlined"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Last Name"
+                      value={lastname}
+                      onChange={(e) => setLastname(e.target.value)}
+                      required
+                      margin="normal"
+                      variant="outlined"
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      margin="normal"
+                      variant="outlined"
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      margin="normal"
+                      variant="outlined"
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Button
+                      type="submit"
+                      fullWidth
+                      variant="contained"
+                      color="primary"
+                      size="large"
+                      sx={{ mt: 2, mb: 2 }}
                     >
-                        Register
-                    </button>
-                </form>
-                <p className="text-gray-400 mt-4">
-                    Already have an account? <Link to="/login" className="text-blue-500 hover:underline">Login</Link>
-                </p>
-            </div>
-        </div>
+                      Register
+                    </Button>
+                  </Grid>
+                </Grid>
+              </form>
+              
+              <Box sx={{ mt: 2, textAlign: 'center' }}>
+                <Typography variant="body1" color="text.secondary">
+                  Already have an account?{' '}
+                  <Link to="/login" style={{ color: darkTheme.palette.primary.main, textDecoration: 'none' }}>
+                    Log in
+                  </Link>
+                </Typography>
+              </Box>
+            </Paper>
+          </Container>
+        </Box>
+      </ThemeProvider>
     );
 };
 

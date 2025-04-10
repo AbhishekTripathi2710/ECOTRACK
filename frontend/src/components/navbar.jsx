@@ -17,7 +17,9 @@ import {
   useMediaQuery,
   alpha,
   ThemeProvider,
-  createTheme
+  createTheme,
+  Avatar,
+  Tooltip
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
@@ -28,8 +30,10 @@ import {
   Calculate as CalculatorIcon,
   Logout as LogoutIcon,
   Menu as MenuIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
+  Person as ProfileIcon
 } from '@mui/icons-material';
+import { useUser } from '../context/UserContext';
 
 // Create a dark theme for the navbar
 const darkTheme = createTheme({
@@ -81,10 +85,21 @@ const Navbar = () => {
   const navigate = useNavigate();
   const theme = darkTheme; // Use dark theme directly
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { user } = useUser();
 
   const handleLogout = () => {
     localStorage.removeItem("authToken");
     navigate("/login");
+  };
+
+  // Get user's first initial for the avatar
+  const getUserInitial = () => {
+    if (user && user.fullname && user.fullname.firstname) {
+      return user.fullname.firstname.charAt(0).toUpperCase();
+    } else if (user && user.email) {
+      return user.email.charAt(0).toUpperCase();
+    }
+    return 'U';
   };
 
   const menuItems = [
@@ -93,6 +108,7 @@ const Navbar = () => {
     { text: 'COMMUNITY', icon: <PeopleIcon />, path: '/community', color: 'inherit' },
     { text: 'CONTESTS', icon: <ContestsIcon />, path: '/contests', color: 'inherit' },
     { text: 'ABOUT US', icon: <AboutIcon />, path: '/', color: 'inherit' },
+    { text: 'PROFILE', icon: <ProfileIcon />, path: '/profile', color: 'inherit' },
   ];
 
   const drawer = (
@@ -144,13 +160,32 @@ const Navbar = () => {
         }}
       >
         <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-            <img
-              src="https://media.istockphoto.com/id/1401304047/vector/reduce-your-carbon-footprint-logo-net-zero-emission.jpg?s=612x612&w=0&k=20&c=xub0yqSnVW4NN827DP0k7VPy5Gc3SSZ-4PbgITJbKVo="
-              alt="Logo"
-              style={{ height: '40px', width: 'auto' }}
-            />
-          </Link>
+          <Tooltip title="View Profile">
+            <IconButton 
+              onClick={() => navigate('/profile')}
+              sx={{ 
+                p: 0,
+                '&:hover': {
+                  transform: 'scale(1.05)',
+                  transition: 'transform 0.2s ease-in-out'
+                }
+              }}
+            >
+              <Avatar 
+                sx={{ 
+                  width: 40, 
+                  height: 40, 
+                  bgcolor: 'primary.main',
+                  fontSize: '1.2rem',
+                  fontWeight: 'bold',
+                  boxShadow: '0 4px 10px rgba(76, 175, 80, 0.3)',
+                  border: '2px solid rgba(255, 255, 255, 0.1)'
+                }}
+              >
+                {getUserInitial()}
+              </Avatar>
+            </IconButton>
+          </Tooltip>
 
           {isMobile ? (
             <IconButton

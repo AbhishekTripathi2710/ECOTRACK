@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Sustainability Challenge is Ending Soon!</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body {
+      background-color: #f5f5f5;
+      color: #333;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #ffffff;
+    }
+    .header {
+      background-color: #1e293b;
+      color: #ffffff;
+      padding: 20px;
+      text-align: center;
+      border-radius: 6px 6px 0 0;
+    }
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #ff9800;
+    }
+    .content {
+      padding: 20px;
+      background-color: #ffffff;
+    }
+    .greeting {
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+    .section {
+      margin-bottom: 25px;
+    }
+    .section-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #1e293b;
+      border-bottom: 2px solid #ff9800;
+      padding-bottom: 5px;
+    }
+    .challenge-box {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+      background-color: #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .challenge-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #1e293b;
+      margin-bottom: 10px;
+    }
+    .challenge-description {
+      margin-bottom: 15px;
+      color: #4b5563;
+    }
+    .time-remaining {
+      display: inline-block;
+      background-color: #fef3c7;
+      color: #d97706;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .progress-container {
+      background-color: #e5e7eb;
+      height: 10px;
+      border-radius: 5px;
+      margin: 15px 0;
+    }
+    .progress-bar {
+      height: 100%;
+      border-radius: 5px;
+      background-color: #4caf50;
+    }
+    .button {
+      display: inline-block;
+      background-color: #ff9800;
+      color: white;
+      padding: 10px 20px;
+      margin-top: 10px;
+      text-decoration: none;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    .button:hover {
+      background-color: #f57c00;
+    }
+    .motivation {
+      background-color: #f8fafc;
+      border-left: 4px solid #4caf50;
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: 4px;
+    }
+    .footer {
+      background-color: #f1f5f9;
+      padding: 20px;
+      text-align: center;
+      font-size: 14px;
+      color: #4b5563;
+      border-radius: 0 0 6px 6px;
+    }
+    @media only screen and (max-width: 600px) {
+      .container {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">EcoTrack</div>
+      <h1>Your Challenge is Ending Soon!</h1>
+    </div>
+    
+    <div class="content">
+      <p class="greeting">Hello {{name}},</p>
+      
+      <p>This is a friendly reminder that you have one or more sustainability challenges that are ending soon. Now's the time to complete them and earn your achievements!</p>
+      
+      <div class="section">
+        <h2 class="section-title">Challenges Ending Soon</h2>
+        
+        {{#each challenges}}
+          <div class="challenge-box">
+            <h3 class="challenge-title">{{title}}</h3>
+            <p class="challenge-description">{{description}}</p>
+            <span class="time-remaining">⏰ {{hoursRemaining}} hours remaining</span>
+            
+            <p>Ends on: <strong>{{endDate}}</strong></p>
+            
+            <div class="progress-container">
+              <div class="progress-bar" style="width: {{progress}}%;"></div>
+            </div>
+            <p>Your progress: <strong>{{progress}}%</strong></p>
+            
+            <a href="https://ecotrack.com/challenges" class="button">Continue Challenge</a>
+          </div>
+        {{/each}}
+      </div>
+      
+      <div class="motivation">
+        <p>Remember, every sustainable action you take helps reduce your carbon footprint and makes a positive impact on our planet. You're making a difference!</p>
+      </div>
+      
+      <p style="margin-top: 20px;">Don't miss out on the opportunity to complete your challenges and earn recognition for your sustainability efforts.</p>
+    </div>
+    
+    <div class="footer">
+      <p>You're receiving this email because you've opted in to challenge reminders.</p>
+      <p>To update your email preferences, <a href="https://ecotrack.com/settings/email-preferences">click here</a>.</p>
+      <p>&copy; 2023 EcoTrack. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html> 

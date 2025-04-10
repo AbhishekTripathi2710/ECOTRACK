@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Weekly Carbon Footprint Report</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body {
+      background-color: #f5f5f5;
+      color: #333;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #ffffff;
+    }
+    .header {
+      background-color: #1e293b;
+      color: #ffffff;
+      padding: 20px;
+      text-align: center;
+      border-radius: 6px 6px 0 0;
+    }
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #4caf50;
+    }
+    .content {
+      padding: 20px;
+      background-color: #ffffff;
+    }
+    .greeting {
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+    .section {
+      margin-bottom: 25px;
+    }
+    .section-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #1e293b;
+      border-bottom: 2px solid #4caf50;
+      padding-bottom: 5px;
+    }
+    .summary-box {
+      background-color: #f1f5f9;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+    .data-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 10px;
+    }
+    .data-row:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    .data-label {
+      font-weight: bold;
+      color: #4b5563;
+    }
+    .data-value {
+      font-weight: bold;
+    }
+    .reduction {
+      color: #4caf50;
+    }
+    .increase {
+      color: #ef4444;
+    }
+    .tips-box {
+      background-color: #ecfdf5;
+      border-left: 4px solid #4caf50;
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: 4px;
+    }
+    .tip {
+      margin-bottom: 15px;
+    }
+    .tip:last-child {
+      margin-bottom: 0;
+    }
+    .tip-content {
+      margin-bottom: 5px;
+    }
+    .tip-impact {
+      font-style: italic;
+      color: #4b5563;
+      font-size: 14px;
+    }
+    .record-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    .record-table th {
+      background-color: #f1f5f9;
+      text-align: left;
+      padding: 10px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    .record-table td {
+      padding: 10px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .record-table tr:last-child td {
+      border-bottom: none;
+    }
+    .footer {
+      background-color: #f1f5f9;
+      padding: 20px;
+      text-align: center;
+      font-size: 14px;
+      color: #4b5563;
+      border-radius: 0 0 6px 6px;
+    }
+    .button {
+      display: inline-block;
+      background-color: #4caf50;
+      color: white;
+      padding: 10px 20px;
+      margin: 15px 0;
+      text-decoration: none;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    .button:hover {
+      background-color: #45a049;
+    }
+    @media only screen and (max-width: 600px) {
+      .container {
+        width: 100%;
+      }
+      .data-row {
+        flex-direction: column;
+      }
+      .data-value {
+        margin-top: 5px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">EcoTrack</div>
+      <h1>Your Weekly Carbon Footprint Report</h1>
+    </div>
+    
+    <div class="content">
+      <p class="greeting">Hello {{name}},</p>
+      
+      <p>Here's your weekly carbon footprint summary. Keep up the good work in reducing your environmental impact!</p>
+      
+      <div class="section">
+        <h2 class="section-title">Weekly Summary</h2>
+        <div class="summary-box">
+          <div class="data-row">
+            <span class="data-label">Current Week Emissions:</span>
+            <span class="data-value">{{currentWeekTotal}} kg CO2e</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Previous Week Emissions:</span>
+            <span class="data-value">{{previousWeekTotal}} kg CO2e</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Change:</span>
+            {{#if isReduction}}
+              <span class="data-value reduction">↓ {{changePercentage}}% decrease</span>
+            {{else}}
+              <span class="data-value increase">↑ {{changePercentage}}% increase</span>
+            {{/if}}
+          </div>
+        </div>
+        
+        {{#if isReduction}}
+          <p>Great job! You've reduced your carbon footprint compared to last week. Keep up the good work!</p>
+        {{else}}
+          <p>Your carbon footprint has increased compared to last week. Check out our tips below to help reduce your emissions.</p>
+        {{/if}}
+      </div>
+      
+      <div class="section">
+        <h2 class="section-title">This Week's Records</h2>
+        
+        {{#if records.length}}
+          <table class="record-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Emissions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each records}}
+                <tr>
+                  <td>{{date}}</td>
+                  <td>{{totalEmissions}} kg CO2e</td>
+                </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        {{else}}
+          <p>No carbon footprint records were found for this week.</p>
+        {{/if}}
+        
+        <a href="https://ecotrack.com/dashboard" class="button">View Full Dashboard</a>
+      </div>
+      
+      <div class="section">
+        <h2 class="section-title">Personalized Tips</h2>
+        <p>Based on your activities, here are some ways you could reduce your carbon footprint:</p>
+        
+        <div class="tips-box">
+          {{#each tips}}
+            <div class="tip">
+              <p class="tip-content">• {{tip}}</p>
+              <p class="tip-impact">Impact: {{impact}}</p>
+            </div>
+          {{/each}}
+        </div>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <p>You're receiving this email because you've opted in to weekly carbon footprint reports.</p>
+      <p>To update your email preferences, <a href="https://ecotrack.com/settings/email-preferences">click here</a>.</p>
+      <p>&copy; 2023 EcoTrack. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html> 
