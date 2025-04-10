@@ -592,20 +592,30 @@ def get_predictions():
         # Get predictions
         predictions = predict_future(df, model, scaler)
         
-        # Get insights and recommendations
-        insights = generate_insights(df)
-        recommendations = generate_recommendations(df)
-        
         # Get anomalies
         anomalies = detect_anomalies(df)
+        
+        # Get insights and recommendations
+        insights = generate_insights(df)
+        recommendations = generate_recommendations(df, anomalies)
+        
+        # Format anomalies for frontend
+        formatted_anomalies = []
+        if anomalies:
+            for anomaly in anomalies:
+                formatted_anomalies.append({
+                    'date': anomaly['date'],
+                    'value': anomaly['value'],
+                    'expected_range': f"{anomaly['expected_range']}"
+                })
         
         return jsonify({
             'modelVersion': MODEL_VERSION,
             'modelScore': validation_score,
-            'predictions': predictions,
+            'forecastData': predictions,  # Changed from predictions to forecastData
             'insights': insights,
             'recommendations': recommendations,
-            'anomalies': anomalies
+            'anomalies': formatted_anomalies
         })
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
