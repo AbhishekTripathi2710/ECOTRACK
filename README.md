@@ -57,11 +57,45 @@ EcoTrack is a full-stack application that combines machine learning, gamificatio
 ### 2. AI-Powered Recommendations
 
 #### Machine Learning Implementation
-- **Model Architecture**
-  - Base Model: GPT-3.5-turbo
-  - Fine-tuned on sustainability domain data
-  - Context window: 4096 tokens
-  - Temperature: 0.7 for creative suggestions
+- **Model Architecture**: Gradient Boosting Regressor with enhanced feature engineering
+- **Model Version**: 1.0.0
+- **Performance Metrics**:
+  - Average Score: 0.6246 (R² score)
+  - Score Range: 0.5555 - 0.7578
+  - Standard Deviation: 0.0720
+  - Validation Set Size: 20% of data
+  - Training Frequency: Weekly retraining
+
+- **Feature Engineering**:
+  - Temporal Features:
+    - Day of week, month, day of month
+    - Weekend and holiday indicators
+    - Seasonal indicators (winter/summer)
+  - Historical Features:
+    - Multiple lag windows (1, 2, 3, 7, 14, 30 days)
+    - Rolling statistics (mean, std, min, max)
+    - Trend analysis (daily, weekly, monthly changes)
+  - Data Quality:
+    - Time-based interpolation for missing values
+    - Robust handling of edge cases
+    - Validation for data consistency
+
+- **Prediction Capabilities**:
+  - 5-day carbon footprint forecasts
+  - Anomaly detection in historical data
+  - Seasonal pattern analysis
+  - Trend identification and analysis
+
+- **Model Strengths**:
+  - Handles missing data gracefully
+  - Captures seasonal patterns
+  - Provides consistent predictions
+  - Adapts to varying data quality
+
+- **Limitations**:
+  - Requires minimum 30 days of historical data
+  - Performance may vary with data quality
+  - Limited to daily granularity
 
 #### Training Data
 - **Dataset Composition**
@@ -155,30 +189,63 @@ EcoTrack is a full-stack application that combines machine learning, gamificatio
 
 ### Machine Learning Models
 
-#### 1. Carbon Footprint Prediction Model
-- **Architecture**: Random Forest Regressor
-- **Features**:
-  - Transportation patterns
-  - Energy consumption
-  - Dietary habits
-  - Consumption patterns
-- **Accuracy**: 92% on validation set
-- **Update Frequency**: Weekly retraining
+#### Carbon Footprint Prediction Model
+- **Model Architecture**: Gradient Boosting Regressor with enhanced feature engineering
+- **Model Version**: 1.0.0
+- **Performance Metrics**:
+  - Average Score: 0.6246 (R² score)
+  - Score Range: 0.5555 - 0.7578
+  - Standard Deviation: 0.0720
+  - Validation Set Size: 20% of data
+  - Training Frequency: Weekly retraining
 
-#### 2. Recommendation Engine
-- **Primary Model**: GPT-3.5-turbo
-- **Custom Layers**:
-  - User preference embedding
-  - Location-based context
-  - Seasonal adjustments
+- **Feature Engineering**:
+  - Temporal Features:
+    - Day of week, month, day of month
+    - Weekend and holiday indicators
+    - Seasonal indicators (winter/summer)
+  - Historical Features:
+    - Multiple lag windows (1, 2, 3, 7, 14, 30 days)
+    - Rolling statistics (mean, std, min, max)
+    - Trend analysis (daily, weekly, monthly changes)
+  - Data Quality:
+    - Time-based interpolation for missing values
+    - Robust handling of edge cases
+    - Validation for data consistency
+
+- **Prediction Capabilities**:
+  - 5-day carbon footprint forecasts
+  - Anomaly detection in historical data
+  - Seasonal pattern analysis
+  - Trend identification and analysis
+
+- **Model Strengths**:
+  - Handles missing data gracefully
+  - Captures seasonal patterns
+  - Provides consistent predictions
+  - Adapts to varying data quality
+
+- **Limitations**:
+  - Requires minimum 30 days of historical data
+  - Performance may vary with data quality
+  - Limited to daily granularity
+
+#### Recommendation Engine
+- **Model**: GPT-3.5-turbo with custom layers
+- **Features**:
+  - User preferences
+  - Location context
+  - Historical patterns
+  - Seasonal factors
 - **Integration**: REST API with streaming support
 
-#### 3. Community Pattern Analysis
-- **Algorithm**: Collaborative Filtering
-- **Purpose**: 
-  - Similar user identification
-  - Challenge recommendations
-  - Content personalization
+#### Community Pattern Analysis
+- **Model**: Collaborative Filtering
+- **Focus**: User similarity and content personalization
+- **Features**:
+  - User behavior patterns
+  - Content engagement metrics
+  - Community trends
 
 ### Security Features
 

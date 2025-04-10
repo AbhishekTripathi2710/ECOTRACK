@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import json
+import time
 
 def generate_test_data(days=60):
     """Generate sample carbon footprint data for testing"""
@@ -56,43 +57,69 @@ def generate_test_data(days=60):
     
     return data
 
-def test_ml_service():
-    """Test the ML service with sample data"""
+def test_ml_service(num_tests=5, delay=2):
+    """Test the ML service with sample data and track model performance"""
     try:
-        # Generate test data
-        test_data = generate_test_data(days=60)
+        scores = []
+        versions = []
         
-        # Prepare request data
-        request_data = {
-            'historicalData': test_data
-        }
+        for i in range(num_tests):
+            # Generate test data
+            test_data = generate_test_data(days=60)
+            
+            # Prepare request data
+            request_data = {
+                'historicalData': test_data
+            }
+            
+            # Send request to ML service
+            print(f"\nTest {i+1}/{num_tests}")
+            print("Sending request to ML service...")
+            response = requests.post('http://localhost:5001/predictions', json=request_data)
+            
+            # Check response
+            if response.status_code == 200:
+                result = response.json()
+                score = result['modelScore']
+                version = result.get('modelVersion', 'unknown')
+                
+                scores.append(score)
+                versions.append(version)
+                
+                print(f"\nModel Version: {version}")
+                print(f"Model Score: {score:.4f}")
+                print("\nInsights:")
+                for insight in result['insights']:
+                    print(f"- {insight}")
+                print("\nRecommendations:")
+                for rec in result['recommendations']:
+                    print(f"- {rec}")
+                print("\nDetected Anomalies:")
+                for anomaly in result['anomalies']:
+                    print(f"- {anomaly['date']}: {anomaly['value']} kg CO2")
+                print("\nForecast Data (first 5 days):")
+                for forecast in result['forecastData'][:5]:
+                    print(f"- {forecast['date']}: {forecast['predicted']} kg CO2")
+            else:
+                print(f"Error: {response.status_code}")
+                print(response.json())
+            
+            if i < num_tests - 1:  # Don't delay after the last test
+                print(f"\nWaiting {delay} seconds before next test...")
+                time.sleep(delay)
         
-        # Send request to ML service
-        print("Sending request to ML service...")
-        response = requests.post('http://localhost:5001/predictions', json=request_data)
-        
-        # Check response
-        if response.status_code == 200:
-            result = response.json()
-            print("\nModel Score:", result['modelScore'])
-            print("\nInsights:")
-            for insight in result['insights']:
-                print(f"- {insight}")
-            print("\nRecommendations:")
-            for rec in result['recommendations']:
-                print(f"- {rec}")
-            print("\nDetected Anomalies:")
-            for anomaly in result['anomalies']:
-                print(f"- {anomaly['date']}: {anomaly['value']} kg CO2")
-            print("\nForecast Data:")
-            for forecast in result['forecastData'][:5]:  # Show first 5 days
-                print(f"- {forecast['date']}: {forecast['predicted']} kg CO2")
-        else:
-            print(f"Error: {response.status_code}")
-            print(response.json())
+        # Print summary statistics
+        if scores:
+            print("\nTest Summary:")
+            print(f"Number of tests: {len(scores)}")
+            print(f"Average score: {np.mean(scores):.4f}")
+            print(f"Score standard deviation: {np.std(scores):.4f}")
+            print(f"Min score: {min(scores):.4f}")
+            print(f"Max score: {max(scores):.4f}")
+            print(f"Model versions used: {', '.join(set(versions))}")
             
     except Exception as e:
         print(f"Test failed: {str(e)}")
 
 if __name__ == '__main__':
-    test_ml_service() 
+    test_ml_service(num_tests=5, delay=2) 

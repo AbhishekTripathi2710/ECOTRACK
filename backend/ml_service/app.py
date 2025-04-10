@@ -22,25 +22,39 @@ MODEL_PATH = 'models/model.joblib'
 SCALER_PATH = 'models/scaler.joblib'
 MIN_DATA_POINTS = 30
 ANOMALY_THRESHOLD = 2.0
+MODEL_VERSION = '1.0'
+VALIDATION_SIZE = 0.2
 
 # Define feature columns globally
 FEATURE_COLUMNS = [
-    'day_of_week', 'month', 'day_of_month', 'is_weekend',
-    'prev_day_footprint', 'prev_week_footprint',
-    'rolling_mean_7d', 'rolling_std_7d'
+    'day_of_week', 'month', 'day_of_month', 'is_weekend', 'is_holiday',
+    'is_winter', 'is_summer', 'daily_change', 'weekly_change', 'monthly_change'
 ]
+
+# Add lag features
+for lag in [1, 2, 3, 7, 14, 30]:
+    FEATURE_COLUMNS.append(f'prev_{lag}d_footprint')
+
+# Add rolling statistics
+for window in [3, 7, 14, 30]:
+    FEATURE_COLUMNS.extend([
+        f'rolling_mean_{window}d',
+        f'rolling_std_{window}d',
+        f'rolling_min_{window}d',
+        f'rolling_max_{window}d'
+    ])
 
 def load_or_create_model():
     """Load existing model or create a new one"""
     try:
         if os.path.exists(MODEL_PATH) and os.path.exists(SCALER_PATH):
-            model = joblib.load(MODEL_PATH)
+            model_info = joblib.load(MODEL_PATH)
             scaler = joblib.load(SCALER_PATH)
-            if model is not None and scaler is not None:
-                return model, scaler
+            if model_info is not None and scaler is not None:
+                return model_info['model'], scaler, model_info['validation_score']
     except Exception as e:
         print(f"Error loading model: {str(e)}")
-    return None, None
+    return None, None, None
 
 def prepare_data(historical_data):
     """Enhanced data preparation with validation and feature engineering"""
@@ -58,13 +72,26 @@ def prepare_data(historical_data):
         if df['date'].isnull().any():
             raise ValueError("Invalid date format in data")
         
+        # Set date as index for time-based operations
+        df = df.set_index('date')
+        
         # Sort by date
-        df = df.sort_values('date')
+        df = df.sort_index()
         
-        # Handle missing values
-        df['carbonFootprint'] = df['carbonFootprint'].ffill().bfill()
+        # Data quality checks
+        if df['carbonFootprint'].isnull().sum() > len(df) * 0.1:  # More than 10% missing
+            raise ValueError("Too many missing values in carbon footprint data")
         
-        # Feature engineering
+        if df['carbonFootprint'].min() < 0:
+            raise ValueError("Negative carbon footprint values detected")
+        
+        # Handle missing values with interpolation
+        df['carbonFootprint'] = df['carbonFootprint'].interpolate(method='time')
+        
+        # Reset index to get date back as a column
+        df = df.reset_index()
+        
+        # Enhanced feature engineering
         df['day_of_week'] = df['date'].dt.dayofweek
         df['month'] = df['date'].dt.month
         df['day_of_month'] = df['date'].dt.day
@@ -72,17 +99,58 @@ def prepare_data(historical_data):
         df['week_of_year'] = df['date'].dt.isocalendar().week
         df['quarter'] = df['date'].dt.quarter
         df['is_weekend'] = df['day_of_week'].isin([5, 6]).astype(int)
+        df['is_holiday'] = df['day_of_week'].isin([0, 6]).astype(int)  # Weekend as holiday
         
-        # Add lag features
-        df['prev_day_footprint'] = df['carbonFootprint'].shift(1)
-        df['prev_week_footprint'] = df['carbonFootprint'].shift(7)
-        df['rolling_mean_7d'] = df['carbonFootprint'].rolling(window=7, min_periods=1).mean()
-        df['rolling_std_7d'] = df['carbonFootprint'].rolling(window=7, min_periods=1).std()
+        # Add lag features with multiple time windows
+        for lag in [1, 2, 3, 7, 14, 30]:
+            df[f'prev_{lag}d_footprint'] = df['carbonFootprint'].shift(lag)
+            # Fill NaN values for lag features using forward fill
+            df[f'prev_{lag}d_footprint'] = df[f'prev_{lag}d_footprint'].ffill()
         
-        # Fill NaN values in lag features with mean
-        lag_columns = ['prev_day_footprint', 'prev_week_footprint', 'rolling_mean_7d', 'rolling_std_7d']
-        for col in lag_columns:
-            df[col] = df[col].fillna(df[col].mean())
+        # Add rolling statistics with multiple windows
+        for window in [3, 7, 14, 30]:
+            df[f'rolling_mean_{window}d'] = df['carbonFootprint'].rolling(window=window, min_periods=1).mean()
+            df[f'rolling_std_{window}d'] = df['carbonFootprint'].rolling(window=window, min_periods=1).std()
+            df[f'rolling_min_{window}d'] = df['carbonFootprint'].rolling(window=window, min_periods=1).min()
+            df[f'rolling_max_{window}d'] = df['carbonFootprint'].rolling(window=window, min_periods=1).max()
+            
+            # Fill NaN values for rolling statistics
+            df[f'rolling_mean_{window}d'] = df[f'rolling_mean_{window}d'].ffill()
+            df[f'rolling_std_{window}d'] = df[f'rolling_std_{window}d'].fillna(0.0)  # No variation if only one value
+            df[f'rolling_min_{window}d'] = df[f'rolling_min_{window}d'].ffill()
+            df[f'rolling_max_{window}d'] = df[f'rolling_max_{window}d'].ffill()
+        
+        # Add trend features
+        df['daily_change'] = df['carbonFootprint'].diff()
+        df['weekly_change'] = df['carbonFootprint'].diff(7)
+        df['monthly_change'] = df['carbonFootprint'].diff(30)
+        
+        # Fill NaN values for trend features
+        df['daily_change'] = df['daily_change'].fillna(0.0)
+        df['weekly_change'] = df['weekly_change'].fillna(0.0)
+        df['monthly_change'] = df['monthly_change'].fillna(0.0)
+        
+        # Add seasonal features
+        df['is_winter'] = df['month'].isin([12, 1, 2]).astype(int)
+        df['is_summer'] = df['month'].isin([6, 7, 8]).astype(int)
+        
+        # Ensure all required features are present
+        missing_features = set(FEATURE_COLUMNS) - set(df.columns)
+        if missing_features:
+            raise ValueError(f"Missing required features: {missing_features}")
+        
+        # Select only the required features in the correct order
+        df = df[['date', 'carbonFootprint'] + FEATURE_COLUMNS]
+        
+        # Final check for any remaining NaN values
+        if df[FEATURE_COLUMNS].isnull().any().any():
+            # Fill any remaining NaN values with appropriate defaults
+            for col in FEATURE_COLUMNS:
+                if df[col].isnull().any():
+                    if col.endswith('_std'):
+                        df[col] = df[col].fillna(0.0)
+                    else:
+                        df[col] = df[col].fillna(df[col].mean())
         
         return df
     except Exception as e:
@@ -141,16 +209,28 @@ def train_model(df):
     try:
         # Define features
         feature_columns = [
-            'day_of_week', 'month', 'day_of_month', 'is_weekend',
-            'prev_day_footprint', 'prev_week_footprint',
-            'rolling_mean_7d', 'rolling_std_7d'
+            'day_of_week', 'month', 'day_of_month', 'is_weekend', 'is_holiday',
+            'is_winter', 'is_summer', 'daily_change', 'weekly_change', 'monthly_change'
         ]
+        
+        # Add lag features
+        for lag in [1, 2, 3, 7, 14, 30]:
+            feature_columns.append(f'prev_{lag}d_footprint')
+        
+        # Add rolling statistics
+        for window in [3, 7, 14, 30]:
+            feature_columns.extend([
+                f'rolling_mean_{window}d',
+                f'rolling_std_{window}d',
+                f'rolling_min_{window}d',
+                f'rolling_max_{window}d'
+            ])
         
         X = df[feature_columns]
         y = df['carbonFootprint']
         
-        # Split data into training and validation sets
-        train_size = int(len(df) * 0.8)
+        # Split data into training and validation sets using a fixed random state
+        train_size = int(len(df) * (1 - VALIDATION_SIZE))
         X_train = X[:train_size]
         y_train = y[:train_size]
         X_val = X[train_size:]
@@ -165,12 +245,14 @@ def train_model(df):
         X_train_scaled = pd.DataFrame(X_train_scaled, columns=feature_columns)
         X_val_scaled = pd.DataFrame(X_val_scaled, columns=feature_columns)
         
-        # Train model
+        # Train model with fixed random state and hyperparameter tuning
         model = GradientBoostingRegressor(
-            n_estimators=100,
-            learning_rate=0.1,
-            max_depth=3,
+            n_estimators=200,  # Increased number of trees
+            learning_rate=0.05,  # Reduced learning rate
+            max_depth=4,  # Slightly increased depth
             min_samples_split=5,
+            min_samples_leaf=2,
+            subsample=0.8,  # Added subsampling
             random_state=42
         )
         
@@ -180,9 +262,18 @@ def train_model(df):
         # Get validation score
         val_score = model.score(X_val_scaled, y_val)
         
-        # Save model and scaler
+        # Save model and scaler with version info
         os.makedirs('models', exist_ok=True)
-        joblib.dump(model, 'models/model.joblib')
+        model_info = {
+            'model': model,
+            'version': MODEL_VERSION,
+            'validation_score': val_score,
+            'training_date': datetime.now().strftime('%Y-%m-%d'),
+            'feature_columns': feature_columns,
+            'training_size': len(X_train),
+            'validation_size': len(X_val)
+        }
+        joblib.dump(model_info, 'models/model.joblib')
         joblib.dump(scaler, 'models/scaler.joblib')
         
         return model, scaler, val_score
@@ -284,13 +375,13 @@ def generate_insights(df):
         print(f"Insights generation error: {str(e)}")  # Add debug logging
         return []  # Return empty list instead of raising error
 
-def generate_recommendations(df, anomalies):
+def generate_recommendations(df, anomalies=None):
     """Enhanced recommendations based on data analysis"""
     try:
         recommendations = []
         
-        # Analyze patterns and anomalies
-        if len(anomalies) > 0:
+        # Analyze patterns and anomalies if provided
+        if anomalies and len(anomalies) > 0:
             anomaly_dates = [a['date'] for a in anomalies]
             recommendations.append(f"Investigate causes of high emissions on {', '.join(anomaly_dates[:3])}")
         
@@ -342,7 +433,7 @@ def generate_recommendations(df, anomalies):
         raise ValueError(f"Recommendations generation failed: {str(e)}")
 
 def predict_future(df, model, scaler, days=5):
-    """Enhanced prediction function with better feature engineering"""
+    """Enhanced prediction function with better feature engineering and NaN handling"""
     try:
         last_date = df['date'].max()
         future_dates = [last_date + timedelta(days=i+1) for i in range(days)]
@@ -350,37 +441,68 @@ def predict_future(df, model, scaler, days=5):
         predictions = []
         current_df = df.copy()
         
-        # Define feature columns
-        feature_columns = [
-            'day_of_week', 'month', 'day_of_month', 'is_weekend',
-            'prev_day_footprint', 'prev_week_footprint',
-            'rolling_mean_7d', 'rolling_std_7d'
-        ]
-        
         for future_date in future_dates:
-            # Create new row with all required columns
-            new_row = pd.DataFrame({
-                'date': [future_date],
-                'carbonFootprint': [None],
-                'day_of_week': [future_date.weekday()],
-                'month': [future_date.month],
-                'day_of_month': [future_date.day],
-                'is_weekend': [1 if future_date.weekday() >= 5 else 0],
-                'prev_day_footprint': [current_df['carbonFootprint'].iloc[-1]],
-                'prev_week_footprint': [current_df['carbonFootprint'].iloc[-7] if len(current_df) >= 7 else current_df['carbonFootprint'].iloc[-1]],
-                'rolling_mean_7d': [current_df['carbonFootprint'].rolling(window=7, min_periods=1).mean().iloc[-1]],
-                'rolling_std_7d': [current_df['carbonFootprint'].rolling(window=7, min_periods=1).std().iloc[-1]]
-            })
+            # Create base features first
+            new_row = {
+                'date': future_date,
+                'carbonFootprint': None,
+                'day_of_week': future_date.weekday(),
+                'month': future_date.month,
+                'day_of_month': future_date.day,
+                'is_weekend': 1 if future_date.weekday() >= 5 else 0,
+                'is_holiday': 1 if future_date.weekday() in [0, 6] else 0,
+                'is_winter': 1 if future_date.month in [12, 1, 2] else 0,
+                'is_summer': 1 if future_date.month in [6, 7, 8] else 0
+            }
             
-            # Add the new row to get correct feature engineering
-            temp_df = pd.concat([current_df, new_row], ignore_index=True)
+            # Calculate lag features with proper NaN handling
+            for lag in [1, 2, 3, 7, 14, 30]:
+                if len(current_df) >= lag:
+                    new_row[f'prev_{lag}d_footprint'] = current_df['carbonFootprint'].iloc[-lag]
+                else:
+                    # If not enough history, use the most recent value
+                    new_row[f'prev_{lag}d_footprint'] = current_df['carbonFootprint'].iloc[-1]
+            
+            # Calculate rolling statistics with proper NaN handling
+            for window in [3, 7, 14, 30]:
+                if len(current_df) >= window:
+                    new_row[f'rolling_mean_{window}d'] = current_df['carbonFootprint'].rolling(window=window, min_periods=1).mean().iloc[-1]
+                    new_row[f'rolling_std_{window}d'] = current_df['carbonFootprint'].rolling(window=window, min_periods=1).std().iloc[-1]
+                    new_row[f'rolling_min_{window}d'] = current_df['carbonFootprint'].rolling(window=window, min_periods=1).min().iloc[-1]
+                    new_row[f'rolling_max_{window}d'] = current_df['carbonFootprint'].rolling(window=window, min_periods=1).max().iloc[-1]
+                else:
+                    # If not enough history, use the most recent value for all statistics
+                    last_value = current_df['carbonFootprint'].iloc[-1]
+                    new_row[f'rolling_mean_{window}d'] = last_value
+                    new_row[f'rolling_std_{window}d'] = 0.0  # No variation if only one value
+                    new_row[f'rolling_min_{window}d'] = last_value
+                    new_row[f'rolling_max_{window}d'] = last_value
+            
+            # Calculate trend features with proper NaN handling
+            if len(current_df) >= 2:
+                new_row['daily_change'] = current_df['carbonFootprint'].diff().iloc[-1]
+            else:
+                new_row['daily_change'] = 0.0
+            
+            if len(current_df) >= 8:  # Need 7 days for weekly change
+                new_row['weekly_change'] = current_df['carbonFootprint'].diff(7).iloc[-1]
+            else:
+                new_row['weekly_change'] = 0.0
+            
+            if len(current_df) >= 31:  # Need 30 days for monthly change
+                new_row['monthly_change'] = current_df['carbonFootprint'].diff(30).iloc[-1]
+            else:
+                new_row['monthly_change'] = 0.0
+            
+            # Convert to DataFrame
+            new_row_df = pd.DataFrame([new_row])
             
             # Get features for prediction
-            X_pred = temp_df.iloc[-1:][feature_columns]
+            X_pred = new_row_df[FEATURE_COLUMNS]
             X_pred_scaled = scaler.transform(X_pred)
             
             # Convert back to DataFrame to preserve feature names
-            X_pred_scaled = pd.DataFrame(X_pred_scaled, columns=feature_columns)
+            X_pred_scaled = pd.DataFrame(X_pred_scaled, columns=FEATURE_COLUMNS)
             
             # Make prediction
             pred = model.predict(X_pred_scaled)[0]
@@ -395,15 +517,7 @@ def predict_future(df, model, scaler, days=5):
                 current_df,
                 pd.DataFrame({
                     'date': [future_date],
-                    'carbonFootprint': [pred],
-                    'day_of_week': [future_date.weekday()],
-                    'month': [future_date.month],
-                    'day_of_month': [future_date.day],
-                    'is_weekend': [1 if future_date.weekday() >= 5 else 0],
-                    'prev_day_footprint': [current_df['carbonFootprint'].iloc[-1]],
-                    'prev_week_footprint': [current_df['carbonFootprint'].iloc[-7] if len(current_df) >= 7 else current_df['carbonFootprint'].iloc[-1]],
-                    'rolling_mean_7d': [current_df['carbonFootprint'].rolling(window=7, min_periods=1).mean().iloc[-1]],
-                    'rolling_std_7d': [current_df['carbonFootprint'].rolling(window=7, min_periods=1).std().iloc[-1]]
+                    'carbonFootprint': [pred]
                 })
             ], ignore_index=True)
         
@@ -463,67 +577,40 @@ def generate_sample_data(days=30):
 
 @app.route('/predictions', methods=['POST'])
 def get_predictions():
+    """Enhanced prediction endpoint with better error handling"""
     try:
-        data = request.json
-        historical_data = data.get('historicalData', [])
-        
-        if not historical_data:
-            return jsonify({'error': 'No historical data provided'}), 400
-        
-        if len(historical_data) < MIN_DATA_POINTS:
-            return jsonify({'error': f'Insufficient data. Need at least {MIN_DATA_POINTS} data points'}), 400
+        data = request.get_json()
+        if not data or 'historicalData' not in data:
+            return jsonify({'error': 'Missing historical data'}), 400
         
         # Prepare data
-        df = prepare_data(historical_data)
+        df = prepare_data(data['historicalData'])
         
-        # Try to load existing model and scaler
-        model = None
-        scaler = None
-        model_score = 0.0
+        # Load or create model
+        model, scaler, validation_score = load_or_create_model()
         
-        try:
-            if os.path.exists('models/model.joblib') and os.path.exists('models/scaler.joblib'):
-                model = joblib.load('models/model.joblib')
-                scaler = joblib.load('models/scaler.joblib')
-                # Calculate model score on current data
-                feature_columns = [
-                    'day_of_week', 'month', 'day_of_month', 'is_weekend',
-                    'prev_day_footprint', 'prev_week_footprint',
-                    'rolling_mean_7d', 'rolling_std_7d'
-                ]
-                X = df[feature_columns]
-                y = df['carbonFootprint']
-                X_scaled = scaler.transform(X)
-                X_scaled = pd.DataFrame(X_scaled, columns=feature_columns)
-                model_score = model.score(X_scaled, y)
-        except Exception as e:
-            print(f"Error loading model: {str(e)}")
+        # Get predictions
+        predictions = predict_future(df, model, scaler)
         
-        # If model loading failed or doesn't exist, train a new one
-        if model is None or scaler is None:
-            model, scaler, model_score = train_model(df)
+        # Get insights and recommendations
+        insights = generate_insights(df)
+        recommendations = generate_recommendations(df)
         
-        # Use the predict_future function for predictions
-        forecast_data = predict_future(df, model, scaler, days=30)
-        
-        # Detect anomalies
+        # Get anomalies
         anomalies = detect_anomalies(df)
         
-        # Generate insights and recommendations
-        insights = generate_insights(df)
-        recommendations = generate_recommendations(df, anomalies)
-        
         return jsonify({
-            'forecastData': forecast_data,
-            'anomalies': anomalies,
+            'modelVersion': MODEL_VERSION,
+            'modelScore': validation_score,
+            'predictions': predictions,
             'insights': insights,
             'recommendations': recommendations,
-            'modelScore': float(model_score)
+            'anomalies': anomalies
         })
-        
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
     except Exception as e:
-        print(f"Prediction error: {str(e)}")  # Add debug logging
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f'Prediction failed: {str(e)}'}), 500
 
 @app.route('/test-data', methods=['GET'])
 def get_test_data():

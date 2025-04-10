@@ -74,7 +74,7 @@ const MLPredictions = ({ monthlyData }) => {
             carbonFootprint: day.carbonFootprint,
             type: 'historical'
         })),
-        ...predictions.forecastData.map(day => ({
+        ...(predictions.predictions || []).map(day => ({
             date: day.date,
             carbonFootprint: day.predicted,
             type: 'forecast'
@@ -101,23 +101,22 @@ const MLPredictions = ({ monthlyData }) => {
                                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                                 <XAxis 
                                     dataKey="date" 
-                                    tickFormatter={(value) => new Date(value).toLocaleDateString()}
                                     stroke="#9CA3AF"
+                                    tickFormatter={(date) => new Date(date).toLocaleDateString()}
                                 />
                                 <YAxis stroke="#9CA3AF" />
                                 <Tooltip 
-                                    labelFormatter={(value) => new Date(value).toLocaleDateString()}
-                                    contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '0.5rem' }}
-                                    labelStyle={{ color: '#9CA3AF' }}
+                                    contentStyle={{ backgroundColor: '#1F2937', border: 'none' }}
+                                    labelFormatter={(date) => new Date(date).toLocaleDateString()}
                                 />
                                 <Legend />
                                 <Line 
                                     type="monotone" 
                                     dataKey="carbonFootprint" 
-                                    stroke="#3b82f6" 
-                                    name="Carbon Footprint"
+                                    name="Carbon Footprint (kg CO2)"
+                                    stroke="#3B82F6" 
+                                    strokeWidth={2}
                                     dot={false}
-                                    strokeDasharray={d => d.type === 'forecast' ? '5 5' : 'none'}
                                 />
                             </LineChart>
                         </ResponsiveContainer>
@@ -125,46 +124,51 @@ const MLPredictions = ({ monthlyData }) => {
                 </div>
 
                 {/* Insights */}
-                <div className="bg-gray-700 rounded-lg p-4">
-                    <h3 className="text-lg font-semibold text-white mb-3">AI Insights</h3>
-                    <ul className="space-y-2">
-                        {predictions.insights.map((insight, index) => (
-                            <li key={index} className="text-gray-300 flex items-start">
-                                <span className="text-blue-400 mr-2">•</span>
-                                {insight}
-                            </li>
+                <div className="col-span-1">
+                    <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                        <FaLightbulb className="text-yellow-400" />
+                        Insights
+                    </h3>
+                    <div className="space-y-3">
+                        {predictions.insights?.map((insight, index) => (
+                            <div key={index} className="bg-gray-700/50 p-3 rounded-lg">
+                                <p className="text-gray-300">{insight}</p>
+                            </div>
                         ))}
-                    </ul>
+                    </div>
                 </div>
 
                 {/* Recommendations */}
-                <div className="bg-gray-700 rounded-lg p-4">
-                    <h3 className="text-lg font-semibold text-white mb-3">Recommendations</h3>
-                    <ul className="space-y-2">
-                        {predictions.recommendations.map((rec, index) => (
-                            <li key={index} className="text-gray-300 flex items-start">
-                                <span className="text-green-400 mr-2">•</span>
-                                {rec}
-                            </li>
+                <div className="col-span-1">
+                    <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                        <FaChartLine className="text-blue-400" />
+                        Recommendations
+                    </h3>
+                    <div className="space-y-3">
+                        {predictions.recommendations?.map((recommendation, index) => (
+                            <div key={index} className="bg-gray-700/50 p-3 rounded-lg">
+                                <p className="text-gray-300">{recommendation}</p>
+                            </div>
                         ))}
-                    </ul>
+                    </div>
                 </div>
 
                 {/* Anomalies */}
-                {predictions.anomalies.length > 0 && (
-                    <div className="col-span-2 bg-red-900/20 rounded-lg p-4">
-                        <h3 className="text-lg font-semibold text-red-400 mb-3">Detected Anomalies</h3>
-                        <ul className="space-y-2">
+                {predictions.anomalies && predictions.anomalies.length > 0 && (
+                    <div className="col-span-2">
+                        <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                            <FaExclamationTriangle className="text-red-400" />
+                            Anomalies Detected
+                        </h3>
+                        <div className="space-y-3">
                             {predictions.anomalies.map((anomaly, index) => (
-                                <li key={index} className="text-gray-300">
-                                    <span className="text-red-400">⚠</span> {anomaly.date}: {anomaly.value} kg CO₂
-                                    <br />
-                                    <span className="text-sm text-gray-400">
-                                        Expected range: {anomaly.expected_range} kg CO₂
-                                    </span>
-                                </li>
+                                <div key={index} className="bg-red-900/20 p-3 rounded-lg">
+                                    <p className="text-red-300">
+                                        Unusual carbon footprint detected on {anomaly.date}: {anomaly.value} kg CO2
+                                    </p>
+                                </div>
                             ))}
-                        </ul>
+                        </div>
                     </div>
                 )}
             </div>
