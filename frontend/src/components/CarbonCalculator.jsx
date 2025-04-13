@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import { useCarbonFootprint } from '../context/carbonFootprintContext';
+import { useNotification } from '../context/NotificationContext';
 import {
     LineChart,
     Line,
@@ -40,6 +41,7 @@ const CarbonCalculator = () => {
         loading,
         error
     } = useCarbonFootprint();
+    const { addNotification } = useNotification();
 
     const [activeTab, setActiveTab] = useState('calculator');
     const [formData, setFormData] = useState({
@@ -101,8 +103,25 @@ const CarbonCalculator = () => {
                     calories: 2000
                 }
             });
-        } catch (err) {
-            console.error('Error submitting form:', err);
+
+            // Award points and check achievements
+            const pointsResponse = await awardFootprintPoints(userId);
+            console.log('Points response:', pointsResponse);
+
+            if (pointsResponse.success) {
+                // Check for achievements
+                const achievementsResponse = await checkAchievements(userId, carbonReduction, carbonData);
+                console.log('Achievements response:', achievementsResponse);
+
+                if (achievementsResponse.success && achievementsResponse.data.newAchievements.length > 0) {
+                    achievementsResponse.data.newAchievements.forEach(achievement => {
+                        addNotification(`Unlocked: ${achievement.name} - ${achievement.description}`, 'achievement');
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            setError('Failed to calculate carbon footprint. Please try again.');
         }
     };
 

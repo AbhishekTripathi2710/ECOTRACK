@@ -33,7 +33,7 @@ router.get('/user/:userId', async (req, res) => {
     
     // Fix the field names to match the database schema
     const userAchievements = await query(
-      `SELECT a.*, ua.earned_at
+      `SELECT a.*, ua.unlocked_at
        FROM user_achievements ua
        JOIN achievements a ON ua.achievement_id = a.id
        WHERE ua.user_id = ?`,
@@ -80,15 +80,6 @@ router.post('/check', auth, async (req, res) => {
     `, [userId]);
     
     const completedChallenges = challengeStats[0]?.completed_challenges || 0;
-    
-    // Get user's community engagement
-    const communityStats = await query(`
-      SELECT COUNT(*) as users_helped
-      FROM community_interactions
-      WHERE helper_id = ? AND type = 'helped'
-    `, [userId]);
-    
-    const usersHelped = communityStats[0]?.users_helped || 0;
     
     // Find achievements the user qualifies for
     const eligibleAchievements = [];
@@ -143,13 +134,6 @@ router.post('/check', auth, async (req, res) => {
         }
       }
     }
-    
-    // 5. Helping others achievements
-    const helpingAchievements = await query(`
-      SELECT * FROM achievements 
-      WHERE criteria_type = 'helping_others' AND criteria_value <= ?
-    `, [usersHelped]);
-    eligibleAchievements.push(...helpingAchievements);
     
     // Track newly awarded achievements
     const newAchievements = [];

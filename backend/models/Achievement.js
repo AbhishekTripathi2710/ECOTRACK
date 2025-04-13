@@ -50,23 +50,44 @@ achievementSchema.pre('save', function(next) {
 });
 
 // Check if a user has met the achievement criteria
-achievementSchema.methods.checkCriteria = function(user) {
+achievementSchema.methods.checkCriteria = async function(user) {
+  console.log(`Checking criteria for achievement: ${this.title}`);
+  console.log('Criteria type:', this.criteria.type);
+  console.log('Criteria value:', this.criteria.value);
+  console.log('User points:', user.points);
+
   switch (this.criteria.type) {
     case 'points':
-      return user.points >= this.criteria.value;
+      const pointsMet = user.points >= this.criteria.value;
+      console.log(`Points criteria met: ${pointsMet} (${user.points} >= ${this.criteria.value})`);
+      return pointsMet;
       
     case 'challenges':
       return user.challenges?.length >= this.criteria.value;
       
     case 'carbon_reduction':
-      // Check if user has carbon reduction data
-      if (!user.carbonData || !user.carbonData.history || user.carbonData.history.length < 2) {
+      // Get carbon entries for the user
+      const carbonEntries = await mongoose.model('CarbonEntry').find({ userId: user._id })
+        .sort({ date: 1 });
+      
+      if (!carbonEntries || carbonEntries.length < 2) {
         return false;
       }
       
-      // Sort history by date
-      const sortedHistory = [...user.carbonData.history].sort((a, b) => 
-        new Date(a.date) - new Date(b.date));
+      // Calculate total carbon footprint for each date
+      const carbonByDate = {};
+      carbonEntries.forEach(entry => {
+        const date = entry.date.toISOString().split('T')[0];
+        if (!carbonByDate[date]) {
+          carbonByDate[date] = 0;
+        }
+        carbonByDate[date] += entry.amount;
+      });
+      
+      // Convert to array and sort by date
+      const sortedHistory = Object.entries(carbonByDate)
+        .map(([date, carbonFootprint]) => ({ date, carbonFootprint }))
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
       
       // Calculate the total reduction percentage
       const firstReading = sortedHistory[0].carbonFootprint;
@@ -78,8 +99,11 @@ achievementSchema.methods.checkCriteria = function(user) {
       return reductionPercentage >= this.criteria.value;
       
     case 'duration':
-      // Check if user has maintained low carbon footprint for specified duration
-      if (!user.carbonData || !user.carbonData.history) {
+      // Get carbon entries for the user
+      const userCarbonEntries = await mongoose.model('CarbonEntry').find({ userId: user._id })
+        .sort({ date: 1 });
+      
+      if (!userCarbonEntries || userCarbonEntries.length === 0) {
         return false;
       }
       
@@ -88,8 +112,23 @@ achievementSchema.methods.checkCriteria = function(user) {
       const thresholdDate = new Date();
       thresholdDate.setMonth(thresholdDate.getMonth() - durationMonths);
       
+      // Calculate daily carbon footprint
+      const dailyCarbon = {};
+      userCarbonEntries.forEach(entry => {
+        const date = entry.date.toISOString().split('T')[0];
+        if (!dailyCarbon[date]) {
+          dailyCarbon[date] = 0;
+        }
+        dailyCarbon[date] += entry.amount;
+      });
+      
+      // Convert to array and sort by date
+      const sortedDailyCarbon = Object.entries(dailyCarbon)
+        .map(([date, carbonFootprint]) => ({ date, carbonFootprint }))
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+      
       // Get readings since the threshold date
-      const relevantReadings = user.carbonData.history.filter(entry => 
+      const relevantReadings = sortedDailyCarbon.filter(entry => 
         new Date(entry.date) >= thresholdDate);
       
       // If we don't have enough readings, return false

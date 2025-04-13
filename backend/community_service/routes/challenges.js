@@ -38,7 +38,7 @@ async function checkChallengeAchievements(userId) {
         
         // Award the achievement
         await query(
-          'INSERT INTO user_achievements (user_id, achievement_id, earned_at) VALUES (?, ?, NOW())',
+          'INSERT INTO user_achievements (user_id, achievement_id, unlocked_at) VALUES (?, ?, NOW())',
           [userId, achievement.id]
         );
         

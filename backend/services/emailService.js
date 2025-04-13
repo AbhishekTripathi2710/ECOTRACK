@@ -243,6 +243,32 @@ class EmailService {
       }
     });
   }
+
+  async sendOTP(email, otp) {
+    try {
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: 'Your OTP for Login',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">Your OTP for Login</h2>
+            <p>Hello,</p>
+            <p>Your OTP for login is: <strong>${otp}</strong></p>
+            <p>This OTP will expire in 10 minutes.</p>
+            <p>If you didn't request this OTP, please ignore this email.</p>
+            <p>Best regards,<br>Your App Team</p>
+          </div>
+        `
+      };
+
+      await this.transporter.sendMail(mailOptions);
+      return true;
+    } catch (error) {
+      console.error('Error sending email:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = new EmailService(); 

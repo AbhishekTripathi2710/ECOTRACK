@@ -3,18 +3,22 @@ const router = express.Router();
 const { protect } = require('../middlewares/authMiddleware');
 const {
     register,
-    login,
+    requestOTP,
+    verifyOTP,
     getProfile,
-    updateProfile
+    updateProfile,
+    logoutUser
 } = require('../controllers/userController');
 
 // Public routes
 router.post('/register', register);
-router.post('/login', login);
+router.post('/request-otp', requestOTP);
+router.post('/verify-otp', verifyOTP);
 
 // Protected routes
 router.use(protect);
 router.get('/me', getProfile);
 router.put('/profile', updateProfile);
+router.post('/logout', logoutUser);
 
 module.exports = router; 

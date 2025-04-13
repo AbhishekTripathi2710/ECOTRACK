@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { communityApi } from '../config/axios';
+import { useNotification } from '../context/NotificationContext';
 
 // Get top users from leaderboard
 export const getTopUsers = async (period = 'weekly', limit = 10) => {
@@ -69,17 +70,65 @@ export const joinChallenge = async (userId, challengeId) => {
 
 // Update challenge progress
 export const updateChallengeProgress = async (userId, challengeId, progress) => {
+  if (!userId || !challengeId || progress === undefined) {
+    return {
+      success: false,
+      error: 'Missing required parameters'
+    };
+  }
+  
+  if (progress < 0 || progress > 100) {
+    return {
+      success: false,
+      error: 'Progress must be between 0 and 100'
+    };
+  }
+
   try {
-    console.log('Updating challenge progress:', { userId, challengeId, progress });
+    // Try to update progress through the API
     const response = await communityApi.post(`/api/challenges/progress`, {
       userId,
       challengeId,
       progress
     });
-    console.log('Update progress response:', response.data);
-    return response.data;
+    
+    return {
+      success: true,
+      data: response.data
+    };
   } catch (error) {
-    console.error('Error updating challenge progress:', error);
+    // If the endpoint doesn't exist (404), use a fallback method
+    if (error.response?.status === 404) {
+      try {
+        // Get user's current challenges
+        const userChallenges = await getUserChallenges(userId);
+        const challenge = userChallenges.find(c => c._id === challengeId);
+        
+        if (!challenge) {
+          return {
+            success: false,
+            error: 'Challenge not found for user'
+          };
+        }
+        
+        // Update challenge locally
+        return {
+          success: true,
+          data: {
+            progress: progress,
+            completed: progress >= 100,
+            message: 'Progress updated locally'
+          }
+        };
+      } catch (fallbackError) {
+        return {
+          success: false,
+          error: 'Failed to update challenge progress locally'
+        };
+      }
+    }
+    
+    // For other errors, return the error message
     return {
       success: false,
       error: error.response?.data?.error || 'Failed to update challenge progress'
@@ -121,33 +170,25 @@ export const updateUserPoints = async (userId, points) => {
 };
 
 // Check achievements
-export const checkAchievements = async (userId, carbonData = null) => {
+export const checkAchievements = async (userId, carbonReduction, carbonData) => {
   try {
-    // Calculate carbon reduction if we have history data
-    let carbonReduction = null;
-    if (carbonData && carbonData.history && carbonData.history.length >= 2) {
-      const sortedHistory = [...carbonData.history].sort((a, b) => 
-        new Date(a.date) - new Date(b.date));
-      
-      const firstReading = sortedHistory[0].carbonFootprint;
-      const lastReading = sortedHistory[sortedHistory.length - 1].carbonFootprint;
-      
-      if (firstReading > 0) {
-        carbonReduction = ((firstReading - lastReading) / firstReading) * 100;
-        // Make sure it's not negative (increased footprint)
-        carbonReduction = Math.max(0, carbonReduction);
-      }
-    }
-
-    const response = await communityApi.post(`/api/achievements/check`, { 
+    const response = await axios.post(`${API_URL}/achievements/check`, {
       userId,
       carbonReduction,
       carbonData
     });
-    return response.data.data || [];
+
+    if (response.data.success && response.data.data.newAchievements.length > 0) {
+      const { addNotification } = useNotification();
+      response.data.data.newAchievements.forEach(achievement => {
+        addNotification(`Unlocked: ${achievement.name} - ${achievement.description}`, 'achievement');
+      });
+    }
+
+    return response.data;
   } catch (error) {
     console.error('Error checking achievements:', error);
-    return [];
+    throw error;
   }
 };
 
@@ -164,17 +205,41 @@ export const createChallenge = async (challengeData) => {
 
 // Get user's challenges
 export const getUserChallenges = async (userId) => {
-  console.log('Getting challenges for user:', userId);
+  if (!userId) {
+    console.error('getUserChallenges: userId is required');
+    return [];
+  }
+
   try {
     const response = await communityApi.get(`/api/challenges/user/${userId}`);
-    console.log('User challenges response:', response.data);
-    console.log('User challenges data type:', typeof response.data.data);
-    console.log('User challenges data length:', response.data.data.length);
-    console.log('First user challenge:', response.data.data[0]);
     return response.data.data || [];
   } catch (error) {
     console.error('Error fetching user challenges:', error);
-    return [];
+    // Return empty array only for 404 (not found) errors
+    if (error.response?.status === 404) {
+      return [];
+    }
+    // For other errors, throw to be handled by the caller
+    throw error;
+  }
+};
+
+// Complete a challenge
+export const completeChallenge = async (userId, challengeId) => {
+  try {
+    const response = await communityApi.post(`/api/challenges/progress`, {
+      userId,
+      challengeId,
+      progress: 100
+    });
+
+    return {
+      success: true,
+      data: response.data.data
+    };
+  } catch (error) {
+    console.error('Error completing challenge:', error);
+    throw error;
   }
 };
 

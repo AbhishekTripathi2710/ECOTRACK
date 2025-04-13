@@ -1,6 +1,7 @@
 const User = require('../models/userModel');
 const {validationResult} = require('express-validator');
 const userService = require('../services/userServices')
+const emailService = require('../services/emailService');
 const blacklistTokenModel = require('../models/blacklistTokenModel')
 
 // Register user
@@ -49,28 +50,65 @@ exports.register = async (req, res) => {
     }
 };
 
-// Login user
-exports.login = async (req, res) => {
+// Request OTP for login
+exports.requestOTP = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email } = req.body;
 
         // Check if user exists
-        const user = await User.findOne({ email }).select('+password');
+        const user = await User.findOne({ email });
         if (!user) {
-            return res.status(401).json({
+            return res.status(404).json({
                 success: false,
-                error: 'Invalid credentials'
+                error: 'User not found'
             });
         }
 
-        // Check password
-        const isMatch = await user.comparePassword(password);
-        if (!isMatch) {
-            return res.status(401).json({
+        // Generate and save OTP
+        const otp = user.generateOTP();
+        await user.save();
+
+        // Send OTP via email
+        await emailService.sendOTP(email, otp);
+
+        res.status(200).json({
+            success: true,
+            message: 'OTP sent successfully'
+        });
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            error: error.message
+        });
+    }
+};
+
+// Verify OTP and login
+exports.verifyOTP = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+
+        // Check if user exists
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({
                 success: false,
-                error: 'Invalid credentials'
+                error: 'User not found'
             });
         }
+
+        // Verify OTP
+        const isValid = user.verifyOTP(otp);
+        if (!isValid) {
+            return res.status(401).json({
+                success: false,
+                error: 'Invalid or expired OTP'
+            });
+        }
+
+        // Clear OTP after successful verification
+        user.otp = undefined;
+        await user.save();
 
         // Generate token
         const token = user.generateAuthToken();
@@ -171,3 +209,33 @@ module.exports.logoutUser = async(req,res,next)=>{
     await blacklistTokenModel.create({token});
     res.status(200).json({message:'Logged out'});
 }
+
+// Update user points
+exports.updateUserPoints = async (req, res) => {
+  try {
+    const { userId, points } = req.body;
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update points
+    user.points += points;
+    
+    // Save the user (this will trigger the achievement check)
+    await user.save();
+    
+    // Check achievements explicitly
+    const achievementController = require('./achievementController');
+    await achievementController.checkAchievements({ body: { userId } }, res);
+    
+    res.json({
+      message: 'Points updated successfully',
+      newPoints: user.points
+    });
+  } catch (error) {
+    console.error('Error updating points:', error);
+    res.status(500).json({ message: 'Error updating points' });
+  }
+};

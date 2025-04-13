@@ -28,27 +28,19 @@ export const UserProvider = ({ children }) => {
         checkAuth();
     }, []);
 
-    // Login user
-    const login = async (email, password) => {
+    // Login user with token
+    const login = async (token, userData) => {
         try {
             setLoading(true);
-            const response = await axiosInstance.post('/api/users/login', { email, password });
-            const { token, user } = response.data.data;
-            
-            // Debug
-            console.log('Login successful, token received (first 20 chars):', token.substring(0, 20) + '...');
             
             // Ensure token has proper format
-            const formattedToken = token.startsWith('Bearer ') ? token : token;
+            const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
             localStorage.setItem('authToken', formattedToken);
             
-            console.log('Token stored in localStorage, format check:', {
-                startsWithBearer: formattedToken.startsWith('Bearer '),
-                length: formattedToken.length
-            });
+            // Set user data
+            setUser(userData);
             
-            setUser(user);
-            return user;
+            return userData;
         } catch (err) {
             setError(err.response?.data?.error || 'Login failed');
             throw err;
@@ -64,17 +56,9 @@ export const UserProvider = ({ children }) => {
             const response = await axiosInstance.post('/api/users/register', userData);
             const { token, user } = response.data.data;
             
-            // Debug
-            console.log('Registration successful, token received (first 20 chars):', token.substring(0, 20) + '...');
-            
             // Ensure token has proper format
-            const formattedToken = token.startsWith('Bearer ') ? token : token;
+            const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
             localStorage.setItem('authToken', formattedToken);
-            
-            console.log('Token stored in localStorage, format check:', {
-                startsWithBearer: formattedToken.startsWith('Bearer '),
-                length: formattedToken.length
-            });
             
             setUser(user);
             return user;

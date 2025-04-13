@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
+import { useChallenges } from '../context/ChallengeContext';
+import { useNotification } from '../context/NotificationContext';
 import { 
   getTopUsers, 
   getUserRank, 
   getAllChallenges, 
   joinChallenge, 
-  updateChallengeProgress,
   getAllAchievements,
   getUserAchievements,
   getUserChallenges
@@ -148,6 +149,8 @@ const getAchievementCriteriaText = (achievement) => {
 const Community = () => {
   const { user } = useUser();
   const navigate = useNavigate();
+  const { challenges: challengesFromContext, loading: loadingChallenges, error: errorChallenges, markChallengeComplete } = useChallenges();
+  const { addNotification } = useNotification();
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -155,6 +158,7 @@ const Community = () => {
   const [loginDialog, setLoginDialog] = useState(false);
   const [selectedChallenge, setSelectedChallenge] = useState(null);
   const [challengeTab, setChallengeTab] = useState(0); // 0: All Challenges, 1: My Challenges
+  const [challenges, setChallenges] = useState([]);
   
   // Leaderboard state
   const [leaderboardData, setLeaderboardData] = useState({
@@ -166,7 +170,6 @@ const Community = () => {
   const [userRank, setUserRank] = useState(null);
   
   // Challenges state
-  const [challenges, setChallenges] = useState([]);
   const [userChallenges, setUserChallenges] = useState([]);
   
   // Achievements state
@@ -301,24 +304,10 @@ const Community = () => {
 
   const handleMarkAsDone = async (challengeId) => {
     try {
-      if (!user) {
-        setError('Please log in to mark challenges as done');
-        return;
-      }
-
-      // Update progress to 100%
-      const response = await updateChallengeProgress(user._id, challengeId, 100);
-      
-      if (response.success) {
-        // Refresh the challenges data
-        fetchData();
-        setSuccess('Challenge marked as done!');
-      } else {
-        setError(response.error || 'Failed to mark challenge as done');
-      }
+      await markChallengeComplete(challengeId);
+      addNotification(`Challenge completed!`, 'challenge');
     } catch (error) {
       console.error('Error marking challenge as done:', error);
-      setError('Failed to mark challenge as done');
     }
   };
 

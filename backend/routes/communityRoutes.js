@@ -19,7 +19,7 @@ router.put('/challenges/:challengeId/progress', auth, challengeController.update
 // Achievement routes
 router.get('/achievements', achievementController.getAllAchievements);
 router.get('/achievements/user/:userId', achievementController.getUserAchievements);
-router.post('/achievements/check', auth, achievementController.checkAchievements);
+router.post('/achievements/check', achievementController.checkAchievements);
 router.post('/achievements', auth, achievementController.createAchievement);
 
 module.exports = router; 

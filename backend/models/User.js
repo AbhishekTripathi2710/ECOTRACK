@@ -60,4 +60,36 @@ userSchema.pre('save', function(next) {
   next();
 });
 
+// Initialize achievements array if it doesn't exist
+userSchema.pre('save', function(next) {
+  if (!this.achievements) {
+    this.achievements = [];
+  }
+  next();
+});
+
+// Add a method to check and update achievements when points change
+userSchema.pre('save', async function(next) {
+  if (this.isModified('points')) {
+    try {
+      console.log('Points modified, checking achievements. Current points:', this.points);
+      const Achievement = mongoose.model('Achievement');
+      const achievements = await Achievement.find();
+      
+      for (const achievement of achievements) {
+        if (!this.achievements.includes(achievement._id)) {
+          const meetsCriteria = await achievement.checkCriteria(this);
+          if (meetsCriteria) {
+            console.log('Achievement criteria met:', achievement.title);
+            this.achievements.push(achievement._id);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error checking achievements in pre-save:', error);
+    }
+  }
+  next();
+});
+
 module.exports = mongoose.model('User', userSchema); 
