@@ -5,7 +5,6 @@ async function updateUserChallengesTable() {
   try {
     console.log('Updating user_challenges table...');
     
-    // Check if completed column exists
     const columns = await query(`
       SELECT COLUMN_NAME 
       FROM INFORMATION_SCHEMA.COLUMNS 
@@ -24,7 +23,6 @@ async function updateUserChallengesTable() {
       console.log('Completed column already exists');
     }
     
-    // Update completed status based on progress
     console.log('Updating completed status based on progress...');
     await query(`
       UPDATE user_challenges
@@ -38,5 +36,4 @@ async function updateUserChallengesTable() {
   }
 }
 
-// Run the function
 updateUserChallengesTable(); 

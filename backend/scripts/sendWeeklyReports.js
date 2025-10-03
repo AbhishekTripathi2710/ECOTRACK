@@ -4,12 +4,10 @@ const User = require('../models/User');
 const Emission = require('../models/Emission');
 const emailService = require('../services/emailService');
 
-// Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log('Connected to MongoDB'))
     .catch(err => console.error('MongoDB connection error:', err));
 
-// Get tips based on user's emissions
 function getTips(emissions) {
     const tips = [
         "Consider using public transportation or carpooling to reduce your travel emissions.",
@@ -24,11 +22,9 @@ function getTips(emissions) {
         "Consider buying local produce to reduce transportation emissions."
     ];
 
-    // Select 3 random tips
     return tips.sort(() => 0.5 - Math.random()).slice(0, 3);
 }
 
-// Calculate user's level progress
 function calculateLevelProgress(user) {
     const currentLevel = Math.floor(user.points / 100) + 1;
     const nextLevel = currentLevel + 1;
@@ -41,9 +37,7 @@ function calculateLevelProgress(user) {
     };
 }
 
-// Get recent achievements
 async function getRecentAchievements(userId) {
-    // This is a placeholder - implement actual achievement logic
     return [
         {
             name: "First Steps",
@@ -58,13 +52,12 @@ async function getRecentAchievements(userId) {
 
 async function sendWeeklyReports() {
     try {
-        // Get all users
+        
         const users = await User.find({ email: { $exists: true } });
         console.log(`Found ${users.length} users to send reports to`);
 
         for (const user of users) {
             try {
-                // Get user's emissions for the last week
                 const oneWeekAgo = new Date();
                 oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
@@ -73,19 +66,14 @@ async function sendWeeklyReports() {
                     date: { $gte: oneWeekAgo }
                 });
 
-                // Calculate total emissions
                 const totalEmissions = emissions.reduce((sum, emission) => sum + emission.amount, 0);
 
-                // Get level progress
                 const levelProgress = calculateLevelProgress(user);
 
-                // Get recent achievements
                 const achievements = await getRecentAchievements(user._id);
 
-                // Get personalized tips
                 const tips = getTips(emissions);
 
-                // Prepare email data
                 const emailData = {
                     name: user.name,
                     totalEmissions: totalEmissions.toFixed(2),
@@ -97,15 +85,13 @@ async function sendWeeklyReports() {
                     tips
                 };
 
-                // Send email
                 await emailService.sendWeeklyReport(user.email, emailData);
                 console.log(`Sent weekly report to ${user.email}`);
 
-                // Add a small delay between emails to avoid rate limiting
                 await new Promise(resolve => setTimeout(resolve, 1000));
             } catch (error) {
                 console.error(`Error sending report to ${user.email}:`, error);
-                continue; // Continue with next user even if one fails
+                continue; 
             }
         }
 
@@ -119,5 +105,4 @@ async function sendWeeklyReports() {
     }
 }
 
-// Run the script
 sendWeeklyReports(); 

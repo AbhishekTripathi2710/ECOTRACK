@@ -4,7 +4,7 @@ const http = require('http');
 const port = process.env.PORT || 5000;
 const SchedulerService = require('./services/schedulerService');
 
-// Debug environment variables
+
 console.log('Server starting with environment:', {
   port,
   hasApiKey: !!process.env.GEMINI_API_KEY,
@@ -14,7 +14,7 @@ console.log('Server starting with environment:', {
 
 const server = http.createServer(app);
 
-// Initialize scheduler service
+
 SchedulerService.init();
 
 server.listen(port, () => {

@@ -13,16 +13,13 @@ const cors = require("cors");
 
 dotenv.config();
 
-// Connect to MongoDB
 connectToDb();
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({extended:true}));
 app.use(cookieParser());
 
-// Routes
 app.get('/',(req,res) => {
     res.send('hello world');
 });
@@ -33,13 +30,11 @@ app.use('/api/community', communityRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/email', emailRoutes);
 
-// Initialize email scheduler for automated notifications
 if (process.env.NODE_ENV !== 'test') {
     emailScheduler.initializeSchedulers();
     console.log('Email schedulers initialized');
 }
 
-// Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).json({ message: 'Something went wrong!' });

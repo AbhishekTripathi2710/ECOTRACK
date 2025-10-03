@@ -3,12 +3,10 @@ const router = express.Router();
 const { query } = require('../models/db');
 const auth = require('../middleware/auth');
 
-// Function to check and award achievements related to challenges
 async function checkChallengeAchievements(userId) {
   try {
     console.log('Checking challenge achievements for user:', userId);
     
-    // Get the count of completed challenges for the user
     const completedChallenges = await query(
       'SELECT COUNT(*) as count FROM user_challenges WHERE user_id = ? AND completed = 1',
       [userId]
@@ -17,32 +15,26 @@ async function checkChallengeAchievements(userId) {
     const challengeCount = completedChallenges[0].count;
     console.log(`User has completed ${challengeCount} challenges`);
     
-    // Get all achievements related to challenges
     const challengeAchievements = await query(
       "SELECT * FROM achievements WHERE criteria_type = 'challenges'"
     );
     
     console.log(`Found ${challengeAchievements.length} challenge-related achievements`);
     
-    // Check each achievement
     for (const achievement of challengeAchievements) {
-      // Check if user already has this achievement
       const existingAchievement = await query(
         'SELECT * FROM user_achievements WHERE user_id = ? AND achievement_id = ?',
         [userId, achievement.id]
       );
       
-      // If user doesn't have the achievement and meets the criteria
       if (existingAchievement.length === 0 && challengeCount >= achievement.criteria_value) {
         console.log(`Awarding achievement: ${achievement.title} to user ${userId}`);
         
-        // Award the achievement
         await query(
           'INSERT INTO user_achievements (user_id, achievement_id, unlocked_at) VALUES (?, ?, NOW())',
           [userId, achievement.id]
         );
         
-        // Award points for the achievement
         const userStats = await query(
           'SELECT * FROM user_stats WHERE user_id = ?',
           [userId]
@@ -51,14 +43,12 @@ async function checkChallengeAchievements(userId) {
         const pointsToAward = achievement.points || 0;
         
         if (userStats.length === 0) {
-          // Create new user stats
           await query(
             `INSERT INTO user_stats (user_id, total_points, weekly_points, monthly_points, yearly_points)
              VALUES (?, ?, ?, ?, ?)`,
             [userId, pointsToAward, pointsToAward, pointsToAward, pointsToAward]
           );
         } else {
-          // Update existing user stats
           await query(
             `UPDATE user_stats
              SET total_points = total_points + ?,
@@ -79,10 +69,8 @@ async function checkChallengeAchievements(userId) {
   }
 }
 
-// Get all challenges
 router.get('/', async (req, res) => {
   try {
-    // Get all active challenges
     const challenges = await query(`
       SELECT * FROM challenges 
       WHERE status = 'active' AND end_date > NOW()
@@ -102,13 +90,11 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Get user's challenges
 router.get('/user/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
     console.log('Getting challenges for user:', userId);
     
-    // Get challenges joined by the user
     const userChallenges = await query(`
       SELECT 
         c.*,
@@ -137,7 +123,6 @@ router.get('/user/:userId', async (req, res) => {
   }
 });
 
-// Join a challenge
 router.post('/join', async (req, res) => {
   try {
     const { userId, challengeId } = req.body;
@@ -150,7 +135,6 @@ router.post('/join', async (req, res) => {
       });
     }
     
-    // Check if user already joined this challenge
     const existing = await query(
       'SELECT * FROM user_challenges WHERE user_id = ? AND challenge_id = ?',
       [userId, challengeId]
@@ -164,14 +148,12 @@ router.post('/join', async (req, res) => {
       });
     }
     
-    // Join the challenge
     await query(
       `INSERT INTO user_challenges (user_id, challenge_id, progress, joined_at)
        VALUES (?, ?, 0, NOW())`,
       [userId, challengeId]
     );
     
-    // Get challenge details
     const challenge = await query(
       'SELECT * FROM challenges WHERE id = ?',
       [challengeId]
@@ -197,7 +179,6 @@ router.post('/join', async (req, res) => {
   }
 });
 
-// Update challenge progress
 router.post('/progress', async (req, res) => {
   try {
     const { userId, challengeId, progress } = req.body;
@@ -210,7 +191,6 @@ router.post('/progress', async (req, res) => {
       });
     }
     
-    // Check if user has joined this challenge
     const existing = await query(
       'SELECT * FROM user_challenges WHERE user_id = ? AND challenge_id = ?',
       [userId, challengeId]
@@ -223,7 +203,6 @@ router.post('/progress', async (req, res) => {
       });
     }
     
-    // Update progress
     await query(
       `UPDATE user_challenges
        SET progress = ?
@@ -231,12 +210,9 @@ router.post('/progress', async (req, res) => {
       [progress, userId, challengeId]
     );
     
-    // Check if challenge is completed
     const completed = progress >= 100;
     
-    // If completed, mark as completed and award points
     if (completed && !existing[0].completed) {
-      // Get challenge points
       const challenge = await query(
         'SELECT * FROM challenges WHERE id = ?',
         [challengeId]
@@ -244,7 +220,6 @@ router.post('/progress', async (req, res) => {
       
       const pointsToAward = challenge[0].points || 0;
       
-      // Mark as completed
       await query(
         `UPDATE user_challenges
          SET completed = 1,
@@ -253,21 +228,18 @@ router.post('/progress', async (req, res) => {
         [userId, challengeId]
       );
       
-      // Award points to user
       const userStats = await query(
         'SELECT * FROM user_stats WHERE user_id = ?',
         [userId]
       );
       
       if (userStats.length === 0) {
-        // Create new user stats
         await query(
           `INSERT INTO user_stats (user_id, total_points, weekly_points, monthly_points, yearly_points)
            VALUES (?, ?, ?, ?, ?)`,
           [userId, pointsToAward, pointsToAward, pointsToAward, pointsToAward]
         );
       } else {
-        // Update existing user stats
         await query(
           `UPDATE user_stats
            SET total_points = total_points + ?,
@@ -280,7 +252,6 @@ router.post('/progress', async (req, res) => {
         );
       }
       
-      // Check for achievements related to challenges
       await checkChallengeAchievements(userId);
       
       return res.json({

@@ -5,48 +5,45 @@ async function initializeChallengesAchievements() {
   try {
     console.log('Starting challenges and achievements initialization...');
 
-    // Seed challenges
     const challenges = [
       {
         title: 'Reduce Carbon Footprint by 10%',
         description: 'Track your carbon emissions for a week and reduce them by 10% compared to your previous average.',
         points: 100,
         start_date: new Date(),
-        end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+        end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) 
       },
       {
         title: 'Use Public Transportation for a Week',
         description: 'Use public transportation or carpool for your daily commute for an entire week.',
         points: 150,
         start_date: new Date(),
-        end_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // 14 days from now
+        end_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) 
       },
       {
         title: 'Zero Waste Challenge',
         description: 'Produce zero waste for 7 days. Avoid single-use plastics and properly recycle or compost all waste.',
         points: 200,
         start_date: new Date(),
-        end_date: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000) // 21 days from now
+        end_date: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000) 
       },
       {
         title: 'Plant a Tree',
         description: 'Plant a tree in your community and document its growth over the next month.',
         points: 300,
         start_date: new Date(),
-        end_date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000) // 60 days from now
+        end_date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000) 
       },
       {
         title: 'Energy Audit Challenge',
         description: 'Conduct an energy audit of your home and implement at least 3 energy-saving measures.',
         points: 250,
         start_date: new Date(),
-        end_date: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000) // 45 days from now
+        end_date: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000) 
       }
     ];
 
-    // Insert challenges
     for (const challenge of challenges) {
-      // Check if challenge already exists
       const existingChallenge = await query('SELECT * FROM challenges WHERE title = ?', [challenge.title]);
       
       if (existingChallenge.length === 0) {
@@ -61,7 +58,6 @@ async function initializeChallengesAchievements() {
       }
     }
 
-    // Seed achievements
     const achievements = [
       {
         title: 'Carbon Rookie',
@@ -105,9 +101,7 @@ async function initializeChallengesAchievements() {
       }
     ];
 
-    // Insert achievements
     for (const achievement of achievements) {
-      // Check if achievement already exists
       const existingAchievement = await query('SELECT * FROM achievements WHERE title = ?', [achievement.title]);
       
       if (existingAchievement.length === 0) {
@@ -128,5 +122,4 @@ async function initializeChallengesAchievements() {
   }
 }
 
-// Run the initialization
 initializeChallengesAchievements(); 

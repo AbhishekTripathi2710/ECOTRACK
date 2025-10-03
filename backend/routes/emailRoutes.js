@@ -3,13 +3,10 @@ const router = express.Router();
 const emailController = require('../controllers/emailController');
 const auth = require('../middleware/auth');
 
-// Get current user's email preferences
 router.get('/preferences', auth, emailController.getEmailPreferences);
 
-// Update email preferences
 router.put('/preferences', auth, emailController.updateEmailPreferences);
 
-// Send a test email (for development and user testing)
 router.post('/test', auth, async (req, res) => {
   try {
     const { emailType } = req.body;

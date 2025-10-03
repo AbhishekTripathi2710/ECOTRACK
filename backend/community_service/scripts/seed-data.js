@@ -5,22 +5,17 @@ async function seedDatabase() {
   try {
     console.log('Starting database seeding...');
 
-    // Use numeric user IDs
-    const userIds = [1, 2, 3]; // Simple numeric IDs for users
+    const userIds = [1, 2, 3];
 
-    // Seed user stats with sample points
     for (const userId of userIds) {
-      // Check if user stats exist
       const existingStats = await query('SELECT * FROM user_stats WHERE user_id = ?', [userId]);
       
       if (existingStats.length === 0) {
-        // Generate random points
         const weeklyPoints = Math.floor(Math.random() * 500);
         const monthlyPoints = weeklyPoints + Math.floor(Math.random() * 500);
         const yearlyPoints = monthlyPoints + Math.floor(Math.random() * 1000);
         const totalPoints = yearlyPoints + Math.floor(Math.random() * 2000);
         
-        // Insert user stats
         await query(
           `INSERT INTO user_stats (user_id, weekly_points, monthly_points, yearly_points, total_points) 
            VALUES (?, ?, ?, ?, ?)`,
@@ -32,48 +27,45 @@ async function seedDatabase() {
       }
     }
 
-    // Seed challenges
     const challenges = [
       {
         title: 'Reduce Carbon Footprint by 10%',
         description: 'Track your carbon emissions for a week and reduce them by 10% compared to your previous average.',
         points: 100,
         start_date: new Date(),
-        end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+        end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) 
       },
       {
         title: 'Use Public Transportation for a Week',
         description: 'Use public transportation or carpool for your daily commute for an entire week.',
         points: 150,
         start_date: new Date(),
-        end_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // 14 days from now
+        end_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) 
       },
       {
         title: 'Zero Waste Challenge',
         description: 'Produce zero waste for 7 days. Avoid single-use plastics and properly recycle or compost all waste.',
         points: 200,
         start_date: new Date(),
-        end_date: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000) // 21 days from now
+        end_date: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000) 
       },
       {
         title: 'Plant a Tree',
         description: 'Plant a tree in your community and document its growth over the next month.',
         points: 300,
         start_date: new Date(),
-        end_date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000) // 60 days from now
+        end_date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000) 
       },
       {
         title: 'Energy Audit Challenge',
         description: 'Conduct an energy audit of your home and implement at least 3 energy-saving measures.',
         points: 250,
         start_date: new Date(),
-        end_date: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000) // 45 days from now
+        end_date: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000) 
       }
     ];
 
-    // Insert challenges
     for (const challenge of challenges) {
-      // Check if challenge already exists
       const existingChallenge = await query('SELECT * FROM challenges WHERE title = ?', [challenge.title]);
       
       if (existingChallenge.length === 0) {
@@ -88,7 +80,6 @@ async function seedDatabase() {
       }
     }
 
-    // Seed achievements
     const achievements = [
       {
         title: 'Carbon Rookie',
@@ -132,9 +123,7 @@ async function seedDatabase() {
       }
     ];
 
-    // Insert achievements
     for (const achievement of achievements) {
-      // Check if achievement already exists
       const existingAchievement = await query('SELECT * FROM achievements WHERE title = ?', [achievement.title]);
       
       if (existingAchievement.length === 0) {
@@ -149,30 +138,26 @@ async function seedDatabase() {
       }
     }
 
-    // Now, let's have user 1 participate in the first challenge
     const firstChallenge = await query('SELECT id FROM challenges LIMIT 1');
     if (firstChallenge.length > 0) {
       const challengeId = firstChallenge[0].id;
       const userId = 1;
       
-      // Join the challenge
       const existingJoin = await query('SELECT * FROM user_challenges WHERE user_id = ? AND challenge_id = ?', [userId, challengeId]);
       if (existingJoin.length === 0) {
         await query(
           'INSERT INTO user_challenges (user_id, challenge_id, progress) VALUES (?, ?, ?)',
-          [userId, challengeId, 50] // 50% progress
+          [userId, challengeId, 50] 
         );
         console.log(`User ${userId} joined challenge ${challengeId} with 50% progress`);
       }
     }
 
-    // Award an achievement to user 2
     const firstAchievement = await query('SELECT id FROM achievements LIMIT 1');
     if (firstAchievement.length > 0) {
       const achievementId = firstAchievement[0].id;
       const userId = 2;
       
-      // Award the achievement
       const existingAward = await query('SELECT * FROM user_achievements WHERE user_id = ? AND achievement_id = ?', [userId, achievementId]);
       if (existingAward.length === 0) {
         await query(
@@ -189,5 +174,4 @@ async function seedDatabase() {
   }
 }
 
-// Run the seeding
 seedDatabase(); 

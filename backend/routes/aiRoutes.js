@@ -4,17 +4,14 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const auth = require('../middleware/auth');
 const dotenv = require('dotenv');
 
-// Ensure environment variables are loaded
 dotenv.config();
 
-// Debug environment variables
 console.log('Environment variables loaded:', {
   hasApiKey: !!process.env.GEMINI_API_KEY,
   apiKeyLength: process.env.GEMINI_API_KEY?.length || 0,
   apiKeyStart: process.env.GEMINI_API_KEY?.substring(0, 4) || 'none'
 });
 
-// Check if API key is available
 const apiKey = process.env.GEMINI_API_KEY;
 if (!apiKey) {
   console.error('ERROR: Gemini API key is not configured in environment variables');
@@ -22,10 +19,8 @@ if (!apiKey) {
   console.error('Environment variables:', process.env);
 }
 
-// Initialize Gemini API with your API key
 const genAI = new GoogleGenerativeAI(apiKey);
 
-// System instructions to define the assistant's behavior and knowledge focus
 const systemInstructions = `
 You are a sustainability expert and carbon footprint advisor with deep knowledge in environmental science, renewable energy, and sustainable living practices. Your responses MUST follow these guidelines:
 
@@ -85,20 +80,16 @@ Hi [name]! Based on your carbon footprint of [X] kg CO2, here are your personali
 Keep up the great work on your sustainability journey! Every small change makes a difference.
 `;
 
-// Get a model ready for prompting
 const getGeminiResponse = async (userPrompt, userContext) => {
   try {
     console.log('Initializing Gemini with API key:', apiKey ? 'API key exists' : 'API key missing');
     
-    // Basic error handling for API key
     if (!apiKey) {
       throw new Error('Gemini API key is not configured');
     }
     
-    // Use gemini-2.0-flash model instead of gemini-1.0-pro
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
     
-    // Create a contextual prompt that includes user data
     const contextualPrompt = `
       ${systemInstructions}
       
@@ -120,7 +111,6 @@ const getGeminiResponse = async (userPrompt, userContext) => {
     
     console.log('Sending prompt to Gemini with model: gemini-2.0-flash');
     
-    // Generate content using the basic generateContent method
     const result = await model.generateContent(contextualPrompt);
     const response = result.response;
     const text = response.text();
@@ -142,7 +132,6 @@ const getGeminiResponse = async (userPrompt, userContext) => {
   }
 };
 
-// Create an AI chat session
 router.post('/chat', auth, async (req, res) => {
   try {
     const { message, context } = req.body;
@@ -155,9 +144,6 @@ router.post('/chat', auth, async (req, res) => {
     }
     
     const response = await getGeminiResponse(message, context || {});
-    
-    // Save to chat history
-    // This would connect to your database in a real implementation
     
     return res.json({
       success: true,
@@ -172,13 +158,9 @@ router.post('/chat', auth, async (req, res) => {
   }
 });
 
-// Get chat history for the current user
 router.get('/history', auth, async (req, res) => {
   try {
     const userId = req.user.id;
-    
-    // This would fetch chat history from your database in a real implementation
-    // For now, we'll return an empty array
     
     return res.json({
       success: true,
@@ -193,7 +175,6 @@ router.get('/history', auth, async (req, res) => {
   }
 });
 
-// Save chat session
 router.post('/save-session', auth, async (req, res) => {
   try {
     const { messages } = req.body;
@@ -206,7 +187,6 @@ router.post('/save-session', auth, async (req, res) => {
       });
     }
     
-    // This would save the messages to your database in a real implementation
     console.log(`Saving ${messages.length} messages for user ${userId}`);
     
     return res.json({
@@ -222,7 +202,6 @@ router.post('/save-session', auth, async (req, res) => {
   }
 });
 
-// Simple endpoint to test authentication
 router.get('/auth-test', auth, (req, res) => {
   try {
     return res.json({

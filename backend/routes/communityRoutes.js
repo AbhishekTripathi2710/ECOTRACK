@@ -5,18 +5,15 @@ const challengeController = require('../controllers/challengeController');
 const achievementController = require('../controllers/achievementController');
 const auth = require('../middleware/auth');
 
-// Leaderboard routes
 router.get('/leaderboard/top', leaderboardController.getTopUsers);
 router.get('/leaderboard/user/:userId', leaderboardController.getUserRank);
 router.post('/leaderboard/update-points', auth, leaderboardController.updateUserPoints);
 
-// Challenge routes
 router.get('/challenges', challengeController.getAllChallenges);
 router.post('/challenges', auth, challengeController.createChallenge);
 router.post('/challenges/:challengeId/join', auth, challengeController.joinChallenge);
 router.put('/challenges/:challengeId/progress', auth, challengeController.updateChallengeProgress);
 
-// Achievement routes
 router.get('/achievements', achievementController.getAllAchievements);
 router.get('/achievements/user/:userId', achievementController.getUserAchievements);
 router.post('/achievements/check', achievementController.checkAchievements);

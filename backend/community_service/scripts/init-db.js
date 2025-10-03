@@ -4,7 +4,6 @@ const path = require('path');
 require('dotenv').config();
 
 async function initializeDatabase() {
-  // Create a connection without specifying a database
   const connection = await mysql.createConnection({
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
@@ -14,17 +13,13 @@ async function initializeDatabase() {
   try {
     console.log('Connected to MySQL server');
 
-    // Create database if it doesn't exist
     await connection.query(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME || 'epics_community'}`);
     console.log(`Database ${process.env.DB_NAME || 'epics_community'} created or already exists`);
     
-    // Use the database
     await connection.query(`USE ${process.env.DB_NAME || 'epics_community'}`);
     
-    // Drop all tables related to challenge_participants if it exists
     await connection.query(`DROP TABLE IF EXISTS challenge_participants`);
     
-    // Drop existing tables if they exist to recreate with correct schema
     await connection.query(`DROP TABLE IF EXISTS user_achievements`);
     await connection.query(`DROP TABLE IF EXISTS user_challenges`);
     await connection.query(`DROP TABLE IF EXISTS user_stats`);
@@ -33,7 +28,6 @@ async function initializeDatabase() {
     
     console.log('Dropped existing tables');
     
-    // Create user_stats table with VARCHAR user_id for MongoDB ObjectIDs
     await connection.query(`
       CREATE TABLE IF NOT EXISTS user_stats (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -48,7 +42,6 @@ async function initializeDatabase() {
     `);
     console.log('user_stats table created or already exists');
     
-    // Create challenges table if it doesn't exist
     await connection.query(`
       CREATE TABLE IF NOT EXISTS challenges (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -63,7 +56,6 @@ async function initializeDatabase() {
     `);
     console.log('challenges table created or already exists');
     
-    // Create user_challenges table if it doesn't exist
     await connection.query(`
       CREATE TABLE IF NOT EXISTS user_challenges (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -79,7 +71,6 @@ async function initializeDatabase() {
     `);
     console.log('user_challenges table created or already exists');
     
-    // Create achievements table if it doesn't exist
     await connection.query(`
       CREATE TABLE IF NOT EXISTS achievements (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -94,7 +85,6 @@ async function initializeDatabase() {
     `);
     console.log('achievements table created or already exists');
     
-    // Create user_achievements table if it doesn't exist
     await connection.query(`
       CREATE TABLE IF NOT EXISTS user_achievements (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -115,5 +105,4 @@ async function initializeDatabase() {
   }
 }
 
-// Run the initialization
 initializeDatabase(); 
